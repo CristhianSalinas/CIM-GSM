@@ -1,0 +1,34 @@
+[
+  {
+      "id": 1,
+      "nombre": "Bujes",
+      "categoria" : "muchos",
+      "cantidad": 25,
+      "estado": "Disponible",
+      "codigo": "SM00194"
+    },
+    {
+      "id": 2,
+      "nombre": "Tornilleria",
+      "categoria": "Repuestos",
+      "cantidad": 8,
+      "estado": "Bajo stock",
+      "codigo": "SM00194"
+    },
+    {
+      "id": 3,
+      "nombre": "Cadenas",
+      "categoria": "Transmisión",
+      "cantidad": 15,
+      "estado": "Disponible",
+      "codigo": "SM00194"
+    },
+    {
+      "id": 4,
+      "nombre": "Filtros",
+      "categoria": "Motor",
+      "cantidad": 3,
+      "estado": "Agotándose",
+      "codigo": "SM00194"
+    }
+  ]
