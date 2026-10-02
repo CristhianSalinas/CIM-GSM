@@ -1,4 +1,5 @@
 import { View, Text, StyleSheet,Pressable, Button, alert, ScrollView, Platform } from 'react-native';
+import { LinearGradient } from "expo-linear-gradient";
 
 import categorias from '../data/Categorias.json';
 

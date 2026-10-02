@@ -1,60 +1,56 @@
-import { View, Text, StyleSheet,Pressable, Button, alert, ScrollView, Platform } from 'react-native';
+import { View, Text, StyleSheet, ScrollView } from 'react-native';
 
 import categorias from '../data/Categorias.json';
 
-export default function Pruebas() {
-
-  function showAlert(message) {
-  if (Platform.OS === 'web') {
-    window.alert(message);
-  } else {
-    Alert.alert(message);
-  }
+interface Producto { 
+    id: number; 
+    nombre: string; 
+    categoria: string; 
+    cantidad: number; 
+    estado: 'Disponible' | 'Agotado'; 
+    codigo: string;
 }
 
+export default function Inventario(){
+  const datos = categorias as Producto[];
   return (
     <View style={styles.container}>
 
-      <Text style={styles.title}>Ingreso Productos</Text>
+      <Text style={styles.title}>Inventario</Text>
+
       <Text style={styles.subtitle}>
-        Productos nuevos o ingresos
+        Control de productos y existencias
       </Text>
 
       <View style={styles.cards}>
 
         <View style={styles.card}>
-          <Text style={styles.number}>+128</Text>
+          <Text style={styles.number}>129</Text>
           <Text style={styles.label}>Productos</Text>
         </View>
 
         <View style={styles.card}>
-          <Text style={styles.number}>+24</Text>
+          <Text style={styles.number}>24</Text>
           <Text style={styles.label}>Categorías</Text>
         </View>
 
-        <View>
-          
-        </View> 
+        <View style={styles.card}>
+          <Text style={styles.number}>5</Text>
+          <Text style={styles.label}>Stock bajo</Text>
+        </View>
 
       </View>
 
 
       <View style={styles.tableHeader}>
-        <Text style={styles.headerText}>SM</Text>
         <Text style={styles.headerText}>Producto</Text>
-        <Text style={styles.headerText}>Cantidad</Text>
+        <Text style={styles.headerText}>Stock</Text>
       </View>
 
 
       <ScrollView>
         {categorias.map((item) => (
           <View key={item.id} style={styles.product}>
-            
-            <View>
-              <Text style={styles.code}>
-                {item.codigo}
-              </Text>
-            </View>
 
             <View>
               <Text style={styles.name}>
@@ -83,33 +79,8 @@ export default function Pruebas() {
 
           </View>
         ))}
-        
       </ScrollView>
-<View>
-        <Button
-          title="Press me"
-          onPress={() => showAlert('Simple Button pressed')}
-        /><Button
-            title="Right button"
-            onPress={() => showAlert('Right button pressed')}
-          /><Pressable style={styles.buttonCMS} onPress={() => showAlert('Pressable button pressed')}>
-          <Text style={{color:'#fff'}}>Pressable Button</Text>
-        </Pressable>
-        <Pressable  
-          onPress={() => {
-            setTimesPressed(current => current + 1);
-          }}
-          style={({pressed}) => [
-            {
-              backgroundColor: pressed ? 'rgb(210, 230, 255)' : 'white',
-            },
-            styles.wrapperCustom,
-          ]}>
-          {({pressed}) => (
-            <Text style={styles.text}>{pressed ? 'Pressed!' : 'Press Me'}</Text>
-          )}
-        </Pressable>
-      </View>
+
 
     </View>
   );
@@ -163,14 +134,6 @@ const styles = StyleSheet.create({
     color:'#6B7280'
   },
 
-  buttonCMS:{
-    flexDirection:'row',
-    justifyContent:'space-between',
-    backgroundColor:'#111827',
-    padding:15,
-    borderRadius:10
-  },
-
 
   tableHeader:{
     flexDirection:'row',
@@ -200,11 +163,6 @@ const styles = StyleSheet.create({
   name:{
     fontSize:16,
     fontWeight:'bold',
-    color:'#111827'
-  },
-
-  code:{
-    fontSize:14,
     color:'#111827'
   },
 
