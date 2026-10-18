@@ -1,6 +1,8 @@
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
 
-import categorias from '../data/Categorias.json';
+
+import categorias from '../../data/Categorias.json';
+import BotonInicio from '../../componentes/botones/boton_inicio';
 
 interface Producto { 
     id: number; 
@@ -11,15 +13,21 @@ interface Producto {
     codigo: string;
 }
 
-export default function Inventario(){
+export default function Conteo(){
   const datos = categorias as Producto[];
   return (
     <View style={styles.container}>
 
-      <Text style={styles.title}>Inventario</Text>
+  <BotonInicio />
+
+      <Text style={styles.title}>Conteo Físico</Text>
 
       <Text style={styles.subtitle}>
-        Control de productos y existencias
+        Ajuste y Control de productos y existencias
+      </Text>
+
+      <Text style={styles.subtitle}>
+        Selecciona una categoria para iniciar con el conteo físico de productos y verificar su stock.
       </Text>
 
       <View style={styles.cards}>
@@ -47,7 +55,9 @@ export default function Inventario(){
         <Text style={styles.headerText}>Stock</Text>
       </View>
 
-
+      <Text style={styles.subtitle}>
+        Barra de busqueda
+      </Text>
       <ScrollView>
         {categorias.map((item) => (
           <View key={item.id} style={styles.product}>

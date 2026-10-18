@@ -8,24 +8,13 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack'; 
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 
-//importacion de estilos
 
-
-// Componentes
-import Home from './componentes/Home';
-import Pruebas from './componentes/Pruebas';
-import Login from './componentes/Login';
-import Inventario from './componentes/Inventario';
-import Barcat from './componentes/barcat';
-//Fin componentes
 
 export default function App() {
   return (
-    
-    <View>
-      <view>Inventario</view>
-      
-    </View>
+  
+      <View><Text>Inventario</Text></View>
+
   );
 }
 
