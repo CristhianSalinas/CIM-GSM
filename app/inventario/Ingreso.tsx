@@ -1,10 +1,12 @@
-import { View, Text, StyleSheet, ScrollView, Image  } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, Image, Pressable } from 'react-native';
 import {SafeAreaView, SafeAreaProvider} from 'react-native-safe-area-context';
 import { Button, DataTable } from 'react-native-paper';
 
 import categorias from '../../data/Categorias.json';
 import BotonInicio from '../../componentes/botones/boton_inicio';
 import BotonVolver from '../../componentes/botones/boton_volver';
+import CustomModal from '../../componentes/botones/ScreenModal';
 
 interface Producto { 
     id: number; 
@@ -17,6 +19,7 @@ interface Producto {
 
 export default function Inventario(){
   const datos = categorias as Producto[];
+    const [modalVisible, setModalVisible] = useState(false);
   return (
     <SafeAreaProvider>
         <SafeAreaView style={{ flex: 1 }}>
@@ -69,14 +72,12 @@ export default function Inventario(){
                                     <Text style={styles.headerText}>Cantidad</Text>
                                   </DataTable.Title>
 
-                                  <DataTable.Title>
-                                    <Text style={styles.headerText}>¿Es Correcto?</Text>
-                                  </DataTable.Title>
-
                                 </DataTable.Header>
                             </DataTable>
 
                             <DataTable>
+                              <Pressable
+                                onPress={() => setModalVisible(true)}>
                                 {categorias.map((item) => ( 
                                     <DataTable.Row key={item.id} style={styles.product}>
                                         <DataTable.Cell>
@@ -93,18 +94,16 @@ export default function Inventario(){
                                         <DataTable.Cell>
                                             <Text style={styles.cellText}>{item.cantidad}</Text>
                                         </DataTable.Cell>
-
-                                        <DataTable.Cell>
-                                            <View style={styles.contenedorFila}>
-                                                <Image style={styles.logo} source={require('../../img/no_correcto.png')}/>
-                                                <Image style={styles.logo} source={require('../../img/controlar.png')}/>
-                                            </View>
-                                        </DataTable.Cell>
                                     </DataTable.Row>
                                 ))}
+                                 </Pressable>
                             </DataTable>
                           
                         </View>
+                        <CustomModal 
+                          modalVisible={modalVisible} 
+                          setModalVisible={setModalVisible} 
+                        />
                     </View>
                 </ScrollView>
             </View>
@@ -136,6 +135,7 @@ const styles = StyleSheet.create({
     paddingTop: 5, 
     paddingHorizontal: 5,
     backgroundColor: '#fff' 
+    
   },
   
 

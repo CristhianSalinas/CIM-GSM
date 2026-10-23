@@ -1,10 +1,12 @@
-import { View, Text, StyleSheet, ScrollView, Image  } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, Image, Pressable  } from 'react-native';
 import { Button, DataTable } from 'react-native-paper';
 
 
 import categorias from '../data/Categorias.json';
 import BotonInicio from '../componentes/botones/boton_inicio';
 import BotonVolver from '../componentes/botones/boton_volver';
+import CustomModal from '../componentes/botones/ScreenModal';
 
 interface Producto { 
     id: number; 
@@ -15,8 +17,11 @@ interface Producto {
     codigo: string;
 }
 
+
 export default function Inventario(){
   const datos = categorias as Producto[];
+  const [modalVisible, setModalVisible] = useState(false);
+
   return (
     <View style={styles.container}>
       <BotonInicio />
@@ -145,37 +150,48 @@ export default function Inventario(){
 
           <ScrollView>
             <DataTable>
+              <Pressable
+                          /*style={[styles.button, styles.buttonOpen]}*/
+                          onPress={() => setModalVisible(true)}>
               {categorias.map((item) => ( 
                   <DataTable.Row key={item.id} style={styles.product}>
+                      
+                          <DataTable.Cell>
+                            <Text style={styles.cellText}>{item.codigo}</Text>
+                          </DataTable.Cell>
 
-                      <DataTable.Cell>
-                        <Text style={styles.cellText}>{item.codigo}</Text>
-                      </DataTable.Cell>
+                          <DataTable.Cell>
+                            <Text style={styles.cellText}>{item.nombre}</Text>
+                          </DataTable.Cell>
 
-                      <DataTable.Cell>
-                        <Text style={styles.cellText}>{item.nombre}</Text>
-                      </DataTable.Cell>
+                          <DataTable.Cell>
+                            <Text style={styles.cellText}>{item.categoria}</Text>
+                          </DataTable.Cell>
 
-                      <DataTable.Cell>
-                        <Text style={styles.cellText}>{item.categoria}</Text>
-                      </DataTable.Cell>
+                          <DataTable.Cell>
+                            
+                            <Text style={styles.cellText}>{item.cantidad}</Text>
+                            
+                          </DataTable.Cell>
 
-                      <DataTable.Cell>
-                        <Text style={styles.cellText}>{item.cantidad}</Text>
-                      </DataTable.Cell>
-
-                      <DataTable.Cell>
-                        <View style={styles.contenedorFila}>
-                          <Image style={styles.logo} source={require('../img/no_correcto.png')}/>
-                          <Image style={styles.logo} source={require('../img/controlar.png')}/>
-                        </View>
-                      </DataTable.Cell>
-
+                          <DataTable.Cell>
+                            <View style={styles.contenedorFila}>
+                              <Image style={styles.logo} source={require('../img/no_correcto.png')}/>
+                              <Image style={styles.logo} source={require('../img/controlar.png')}/>
+                            </View>
+                          </DataTable.Cell>
+                      
                   </DataTable.Row>
               ))}
+              </Pressable>
             </DataTable>
           </ScrollView>
+          
       </View>
+      <CustomModal 
+          modalVisible={modalVisible} 
+          setModalVisible={setModalVisible} 
+        />
     </View>
   );
 }
@@ -196,6 +212,17 @@ const styles = StyleSheet.create({
     paddingTop: 5, 
     paddingHorizontal: 5,
     backgroundColor: '#fff' 
+  },
+
+  button: {
+    borderRadius: 20,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    elevation: 2,
+  },
+
+  buttonOpen: {
+    backgroundColor: '#F194FF',
   },
   
 /*container:{

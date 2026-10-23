@@ -177,7 +177,7 @@ const styles = StyleSheet.create({
     flexDirection:'row',
     justifyContent:'space-between',
     elevation:2,
-    flexShrink: 1
+    
   },
 
 
