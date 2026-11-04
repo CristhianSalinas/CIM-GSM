@@ -1,0 +1,27 @@
+[
+  {
+      "id": 1,
+      "cliente": "Grupo SuperMaquinas Medellin",
+      "id_pedidos": 1
+    },
+    {
+      "id": 2,
+      "cliente": "izaki sas",
+      "id_pedidos": 2
+    },
+    {
+      "id": 3,
+      "cliente": "lamaos",
+      "id_pedidos": 3
+    },
+    {
+      "id": 4,
+      "cliente": "El amigo de la maquinaria",
+      "id_pedidos": 4
+    },
+    {
+      "id": 5,
+      "cliente": "isb parts",
+      "id_pedidos": 5
+    }
+  ]

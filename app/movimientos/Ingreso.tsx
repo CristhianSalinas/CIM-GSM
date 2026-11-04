@@ -4,8 +4,8 @@ import {SafeAreaView, SafeAreaProvider} from 'react-native-safe-area-context';
 import { Button, DataTable } from 'react-native-paper';
 
 import categorias from '../../data/Categorias.json';
-import BotonInicio from '../../componentes/botones/boton_inicio';
 import BotonVolver from '../../componentes/botones/boton_volver';
+import Botonenviar from '../../componentes/botones/boton_enviar_ingreso';
 import CustomModal from '../../componentes/botones/ScreenModal';
 
 interface Producto { 
@@ -18,8 +18,14 @@ interface Producto {
 }
 
 export default function Inventario(){
+  
   const datos = categorias as Producto[];
-    const [modalVisible, setModalVisible] = useState(false);
+
+  const [modalVisible, setModalVisible] = useState(false);
+
+  const [productoSeleccionado, setProductoSeleccionado] =
+  useState<Producto | null>(null);
+
   return (
     <SafeAreaProvider>
         <SafeAreaView style={{ flex: 1 }}>
@@ -76,9 +82,15 @@ export default function Inventario(){
                             </DataTable>
 
                             <DataTable>
-                              <Pressable
-                                onPress={() => setModalVisible(true)}>
-                                {categorias.map((item) => ( 
+                                {datos.map((item) => (
+                                <Pressable
+                                    key={item.id}
+                                    onPress={() => {
+                                        setProductoSeleccionado(item);
+                                        setModalVisible(true);
+                                    }}
+                                >
+                                
                                     <DataTable.Row key={item.id} style={styles.product}>
                                         <DataTable.Cell>
                                             <View style={styles.contenedorColumna}>
@@ -95,17 +107,20 @@ export default function Inventario(){
                                             <Text style={styles.cellText}>{item.cantidad}</Text>
                                         </DataTable.Cell>
                                     </DataTable.Row>
-                                ))}
+                                
                                  </Pressable>
+                                 ))}
                             </DataTable>
                           
                         </View>
                         <CustomModal 
                           modalVisible={modalVisible} 
                           setModalVisible={setModalVisible} 
+                          productoSeleccionado={productoSeleccionado}
                         />
                     </View>
                 </ScrollView>
+                <Botonenviar />
             </View>
       </SafeAreaView>
   </SafeAreaProvider>
@@ -135,7 +150,6 @@ const styles = StyleSheet.create({
     paddingTop: 5, 
     paddingHorizontal: 5,
     backgroundColor: '#fff' 
-    
   },
   
 

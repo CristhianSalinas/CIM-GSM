@@ -13,12 +13,12 @@ export default function Index() {
       <BotonInicio />
       <Text>Control de Mercancía</Text>
 
-      <Pressable style={styles.button} onPress={() => router.push('/inventario/Ingreso')}>
+      <Pressable style={styles.button} onPress={() => router.push('/movimientos/Ingreso')}>
         <Text style={styles.buttontext}>Ingreso de mercancía</Text>
       </Pressable>
   
 
-    <Pressable style={styles.button} onPress={() => router.push('/inventario/Salida')}>
+    <Pressable style={styles.button} onPress={() => router.push('/movimientos/Salida')}>
         <Text style={styles.buttontext}>Salidas de mercancía</Text>
       </Pressable>
   

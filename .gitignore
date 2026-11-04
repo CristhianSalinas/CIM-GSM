@@ -39,3 +39,17 @@ yarn-error.*
 # generated native folders
 /ios
 /android
+
+# Python
+backend/venv/
+backend/.env
+__pycache__/
+*.pyc
+
+# Node
+node_modules/
+.expo/
+
+# Archivos del sistema
+.DS_Store
+Thumbs.db

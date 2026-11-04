@@ -1,13 +1,22 @@
 import React from 'react';
 import { Alert, Modal, StyleSheet, Text, Image, Pressable, View } from 'react-native';
 
+interface Producto {
+  id: number;
+  codigo: string;
+  categoria: string;
+  nombre: string;
+  cantidad: number;
+  estado: 'Disponible' | 'Agotado';
+}
+
 interface CustomModalProps {
   modalVisible: boolean;
   setModalVisible: (visible: boolean) => void;
-  children?: React.ReactNode; // Opcional, por si quieres meterle contenido luego
+  productoSeleccionado: Producto | null;
 }
 
-const CustomModal: React.FC<CustomModalProps> = ({ modalVisible, setModalVisible }) => {
+const CustomModal: React.FC<CustomModalProps> = ({ modalVisible, setModalVisible,  productoSeleccionado }) => {
   return (
     <Modal
       animationType="slide"
@@ -20,24 +29,33 @@ const CustomModal: React.FC<CustomModalProps> = ({ modalVisible, setModalVisible
       <View style={styles.centeredView}>
         <View style={styles.modalView}>
           
-          <Text style={styles.modalText}>Información importante del producto</Text>
+          <Text style={styles.modalText}>¿Es correcta la cantidad del producto seleccionado?</Text>
+          
+          <Text>Código: {productoSeleccionado?.codigo}</Text>
+
+          <Text>Nombre: {productoSeleccionado?.nombre}</Text>
+
+          <Text>Categoría: {productoSeleccionado?.categoria}</Text>
+
+          <Text>Cantidad: {productoSeleccionado?.cantidad}</Text>
 
           <View style={styles.containerButtons}>
-            <Pressable
-              style={[styles.button, styles.buttonClose]}
-              onPress={() => setModalVisible(false)}>
-              {/*<Text style={styles.textStyle}>✕</Text>*/}
-              <Image style={styles.logo} source={require('../../img/no_correcto.png')}/>
-            </Pressable>
+
+              <Pressable
+                  style={[styles.button, styles.buttonClose]}
+                  onPress={() => setModalVisible(false)}>
+                    {/*<Text style={styles.textStyle}>✕</Text>*/}
+                    <Image style={styles.logo} source={require('../../img/no_correcto.png')}/>
+              </Pressable>
 
             <Pressable
-              style={[styles.button, styles.buttonConfirm]}
-              onPress={() => {
-                console.log("Confirmado");
-                setModalVisible(false);
-              }}>
-                <Image style={styles.logo} source={require('../../img/controlar.png')}/>
-             {/* <Text style={styles.textStyle}>✓</Text>*/}
+                style={[styles.button, styles.buttonConfirm]}
+                onPress={() => {
+                  console.log("Confirmado");
+                  setModalVisible(false);
+                }}>
+                  <Image style={styles.logo} source={require('../../img/controlar.png')}/>
+              {/* <Text style={styles.textStyle}>✓</Text>*/}
             </Pressable>
           </View>
 
@@ -47,7 +65,6 @@ const CustomModal: React.FC<CustomModalProps> = ({ modalVisible, setModalVisible
   );
 };
 
-// ... tus estilos se quedan exactamente igual ...
 const styles = StyleSheet.create({
   centeredView: {
     flex: 1,
