@@ -15,7 +15,7 @@ DATABASE_URL = URL.create(
 	password=os.getenv("DB_PASSWORD", ""),
 	host=os.getenv("DB_HOST", "localhost"),
 	port=int(os.getenv("DB_PORT", "3306")),
-	database=os.getenv("DB_NAME", "cim_gsm_bogota"),
+	database=os.getenv("DB_NAME", "CIM_DB"),
 	query={"charset": "utf8mb4"},
 )
 

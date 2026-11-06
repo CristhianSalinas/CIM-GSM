@@ -1,20 +1,57 @@
-import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
+import { View, Text, StyleSheet, ScrollView } from 'react-native';
 
+import { useEffect, useState } from 'react';
 
-import categorias from '../../data/Categorias.json';
 import BotonInicio from '../../componentes/botones/boton_inicio';
 
-interface Producto { 
+interface Producto {
+  id_producto: number;
+  codigo_sm: string;
+  nombre: string;
+  id_marca: number;
+  referencia: string;
+  descripcion: string;
+  precio: number;
+  cantidad_fisica: number;
+}
+/*interface Producto { 
     id: number; 
     nombre: string; 
     categoria: string; 
     cantidad: number; 
     estado: 'Disponible' | 'Agotado'; 
     codigo: string;
-}
+}*/
 
 export default function Conteo(){
-  const datos = categorias as Producto[];
+  /*const datos = categorias as Producto[];*/
+  const API_URL = "http://127.0.0.1:8000";
+  const [productos, setProductos] = useState<Producto[]>([]);
+
+  const cargarProductos = async () => {
+      try {
+            const respuesta = await fetch(`${API_URL}/api/productos`);
+            
+          if (!respuesta.ok) {
+                    throw new Error(`Error HTTP: ${respuesta.status}`);
+                  }
+            
+            const datos = await respuesta.json();
+            
+            setProductos(datos);
+          } catch (error) {
+            console.log("Error al cargar productos:", error);
+         }
+         
+  };
+  
+
+  
+
+    useEffect(() => {
+    cargarProductos();
+  }, []);
+
   return (
     <View style={styles.container}>
 
@@ -59,8 +96,8 @@ export default function Conteo(){
         Barra de busqueda
       </Text>
       <ScrollView>
-        {categorias.map((item) => (
-          <View key={item.id} style={styles.product}>
+        {productos.map((item) => (
+          <View key={item.id_producto} style={styles.product}>
 
             <View>
               <Text style={styles.name}>
@@ -68,23 +105,23 @@ export default function Conteo(){
               </Text>
 
               <Text style={styles.category}>
-                {item.categoria}
+                {item.codigo_sm}
               </Text>
             </View>
 
 
             <View>
               <Text style={styles.stock}>
-                {item.cantidad}
+                {item.cantidad_fisica}
               </Text>
 
-              <Text style={
+            {/*  <Text style={
                 item.estado === 'Disponible'
                 ? styles.available
                 : styles.warning
               }>
                 {item.estado}
-              </Text>
+              </Text>*/}
             </View>
 
           </View>
