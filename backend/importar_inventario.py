@@ -1,12 +1,11 @@
+
 import pandas as pd
-from sqlalchemy import  text
-from collections import Counter
+from sqlalchemy import text
 
 from app.config.database import SessionLocal
 from app.services.lector_excel import leer_excel
 from app.models.producto import Producto
-
-
+from app.models.marca_producto import MarcaProducto
 
 
 # 1. Leer y preparar Excel
@@ -33,6 +32,7 @@ columnas = [
 df = df[columnas].copy()
 
 
+# 2. Limpiar datos
 def limpiar(valor):
     if pd.isna(valor):
         return None
@@ -42,12 +42,26 @@ def limpiar(valor):
 for columna in ["codigo_sm", "nombre", "descripcion", "referencia"]:
     df[columna] = df[columna].apply(limpiar)
 
+df["codigo_sm"] = df["codigo_sm"].apply(
+    lambda x: x.strip() if x else None
+)
 
-# 2. Identificar marcas por el nombre del producto
+
+# 3. Detectar códigos duplicados
+duplicados = df[df["codigo_sm"].duplicated(keep=False)]
+
+print("\n========== DUPLICADOS EN EXCEL ==========")
+print(duplicados[["codigo_sm", "nombre"]])
+print("Total de registros duplicados:", len(duplicados))
+
+if not duplicados.empty:
+    raise ValueError("Hay códigos duplicados en el Excel. Corrígelos antes de importar.")
+
+
+# 4. Identificar marcas
 def identificar_marca(nombre, marcas):
     nombre = (nombre or "").upper()
 
-    # Se revisan primero las marcas compuestas
     if "AILI O SUMAQ" in nombre:
         buscada = "AILI O SUMAQ"
     elif "BERCH" in nombre:
@@ -59,45 +73,43 @@ def identificar_marca(nombre, marcas):
     elif "MDM" in nombre:
         buscada = "MDM"
     else:
-         buscada = "ACTUALIZAR"
+        buscada = "ACTUALIZAR"
 
     return marcas.get(buscada)
 
 
-# 3. Consultar MySQL
+# 5. Conectar con MySQL
 db = SessionLocal()
 
+nuevos = 0
+actualizados = 0
+sin_marca = []
+
 try:
-    productos_existentes = db.execute(
-        text("SELECT codigo_sm FROM producto")
-    ).scalars().all()
 
     marcas_db = db.execute(
         text("SELECT id_marca, nombre FROM marca_producto")
     ).mappings().all()
-
-    codigos_existentes = set(productos_existentes)
 
     marcas = {
         marca["nombre"].strip().upper(): marca["id_marca"]
         for marca in marcas_db
     }
 
-    # 4. Clasificar registros
-    nuevos = []
-    existentes = []
-    sin_marca = []
+    productos_db = db.query(Producto).all()
 
+    productos_por_codigo = {
+        p.codigo_sm: p for p in productos_db
+    }
+
+    # 6. Recorrer Excel
     for _, fila in df.iterrows():
+
         producto = fila.to_dict()
-        producto["precio"] = None
+
         codigo = producto["codigo_sm"]
 
         if not codigo or not producto["nombre"]:
-            continue
-
-        if codigo in codigos_existentes:
-            existentes.append(producto)
             continue
 
         producto["id_marca"] = identificar_marca(
@@ -106,36 +118,58 @@ try:
 
         if producto["id_marca"] is None:
             sin_marca.append(producto)
+            continue
 
-        nuevos.append(producto)
+        existente = productos_por_codigo.get(codigo)
 
-    # 5. Mostrar simulación
-    print("\n========== SIMULACIÓN DE IMPORTACIÓN ==========")
+        if existente:
 
-    print("Registros del Excel:", len(df))
-    print("Productos existentes en MySQL:", len(existentes))
-    print("Productos nuevos:", len(nuevos))
-    print("Productos sin marca identificada:", len(sin_marca))
+            # Actualizar producto existente
+            existente.nombre = producto["nombre"]
+            existente.descripcion = producto["descripcion"]
+            existente.referencia = producto["referencia"]
+            existente.peso = producto["peso"]
+            existente.cantidad_fisica = producto["cantidad_fisica"]
+            existente.id_marca = producto["id_marca"]
 
-    print("\n========== PRODUCTOS EXISTENTES ==========")
+            actualizados += 1
 
-    for producto in existentes:
-        print(producto["codigo_sm"], "-", producto["nombre"])
+        else:
 
-    print("\n========== PRODUCTOS SIN MARCA ==========")
+            # Insertar producto nuevo
+            producto["precio"] = None
 
-    for producto in sin_marca[:20]:
-        print(producto["codigo_sm"], "-", producto["nombre"])
+            nuevo_producto = Producto(**producto)
 
-    print("\n========== RESULTADO ==========")
+            db.add(nuevo_producto)
 
+            # Evitar volver a insertar el mismo código
+            productos_por_codigo[codigo] = nuevo_producto
+
+            nuevos += 1
+
+    # 7. Validar marcas
     if sin_marca:
-        print("IMPORTACIÓN PENDIENTE: hay marcas por revisar.")
-    else:
-        print("SIMULACIÓN CORRECTA: no hay marcas pendientes.")
+        raise ValueError(
+            f"Hay {len(sin_marca)} productos sin marca identificada."
+        )
 
-    print("No se insertó ni modificó ningún producto.")
+    # 8. Guardar cambios
+    db.commit()
 
+    print("\n========== IMPORTACIÓN COMPLETADA ==========")
+    print("Registros del Excel:", len(df))
+    print("Productos insertados:", nuevos)
+    print("Productos actualizados:", actualizados)
+    print("Productos sin marca:", len(sin_marca))
+
+except Exception as error:
+
+    db.rollback()
+
+    print("\nError durante la importación:", error)
+
+    raise
 
 finally:
     db.close()

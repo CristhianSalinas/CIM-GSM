@@ -15,5 +15,6 @@ class PedidoRespuesta(BaseModel):
     id_cliente: int
     fecha : datetime
     id_estado: int
+    id_entrada: int
 
     model_config = ConfigDict(from_attributes=True)

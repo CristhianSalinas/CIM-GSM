@@ -21,4 +21,4 @@ class Producto(Base):
     referencia = Column(String(45))
     peso = Column(Float)
     precio = Column(Integer)
-    cantidad_fisicaa = Column("Cantidad_fisica", Integer, default=0)
+    cantidad_fisica = Column("Cantidad_fisica", Integer, default=0)

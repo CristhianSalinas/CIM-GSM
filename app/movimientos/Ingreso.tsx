@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect} from 'react';
+import { useLocalSearchParams } from 'expo-router';
 import { View, Text, StyleSheet, ScrollView, Image, Pressable } from 'react-native';
 import {SafeAreaView, SafeAreaProvider} from 'react-native-safe-area-context';
-import { Button, DataTable } from 'react-native-paper';
+import {DataTable } from 'react-native-paper';
 
-import categorias from '../../data/Categorias.json';
+
 import BotonVolver from '../../componentes/botones/boton_volver';
 import Botonenviar from '../../componentes/botones/boton_enviar_ingreso';
 import CustomModal from '../../componentes/botones/ScreenModal';
@@ -18,8 +19,50 @@ interface Producto {
 }
 
 export default function Inventario(){
+
+  const { id_pedido } = useLocalSearchParams<{
+      id_pedido: string;
+  }>();
+
+  const API_URL = "http://127.0.0.1:8000";
   
-  const datos = categorias as Producto[];
+  const [datos, setDatos] = useState<Producto[]>([]);
+
+  const cargarProductosPedido = async () => {
+  try {
+      const respuesta = await fetch(
+        `${API_URL}/api/pedidos/${id_pedido}/productos`
+      );
+
+      if (!respuesta.ok) {
+        throw new Error(`Error HTTP: ${respuesta.status}`);
+      }
+
+      const resultado = await respuesta.json();
+
+      const productosAdaptados = resultado.map((item: any) => ({
+          id: item.id_producto,
+          nombre: item.nombre,
+          categoria: '',
+          cantidad: item.cantidad_solicitada,
+          estado: 'Disponible',
+          codigo: item.codigo_sm
+        }));
+
+      
+        setDatos(productosAdaptados);
+
+      } catch (error) {
+          console.log("Error cargando productos del pedido:", error);
+      }
+  };
+
+
+  useEffect(() => {
+  if (id_pedido) {
+    cargarProductosPedido();
+  }
+}, [id_pedido]);
 
   const [modalVisible, setModalVisible] = useState(false);
 
@@ -31,7 +74,7 @@ export default function Inventario(){
         <SafeAreaView style={{ flex: 1 }}>
             <View style={styles.container}>
                 <BotonVolver />
-                <Text style={styles.title}>Ingreso de mercancía</Text>
+                <Text style={styles.title}> Ingreso de mercancía - Pedido {id_pedido}</Text>
             
 
                 <ScrollView>

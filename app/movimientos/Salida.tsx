@@ -1,10 +1,13 @@
 import { View, Text, StyleSheet, ScrollView, Image } from 'react-native';
+import React, { useState, useEffect} from 'react';
+import { useLocalSearchParams } from 'expo-router';
 
-import categorias from '../../data/Categorias.json';
+
 import BotonInicio from '../../componentes/botones/boton_inicio';
 import BotonVolver from '../../componentes/botones/boton_volver';
 
 interface Producto { 
+   id_detalle: number;
     id: number; 
     nombre: string; 
     categoria: string; 
@@ -14,7 +17,51 @@ interface Producto {
 }
 
 export default function Inventario(){
-  const datos = categorias as Producto[];
+   const { id_pedido } = useLocalSearchParams<{
+        id_pedido: string;
+    }>();
+  
+    const API_URL = "http://127.0.0.1:8000";
+    
+    const [datos, setDatos] = useState<Producto[]>([]);
+  
+    const cargarProductosPedido = async () => {
+    try {
+        const respuesta = await fetch(
+          `${API_URL}/api/pedidos/${id_pedido}/productos`
+        );
+  
+        if (!respuesta.ok) {
+          throw new Error(`Error HTTP: ${respuesta.status}`);
+        }
+  
+        const resultado = await respuesta.json();
+  
+        const productosAdaptados = resultado.map((item: any) => ({
+            id_detalle: item.id_detalle,
+            id: item.id_producto,
+            nombre: item.nombre,
+            categoria: '',
+            cantidad: item.cantidad_solicitada,
+            estado: 'Disponible',
+            codigo: item.codigo_sm
+          }));
+  
+        
+          setDatos(productosAdaptados);
+  
+        } catch (error) {
+            console.log("Error cargando productos del pedido:", error);
+        }
+    };
+  
+  
+    useEffect(() => {
+    if (id_pedido) {
+      cargarProductosPedido();
+    }
+  }, [id_pedido]);
+
   return (
     <View style={styles.container}>
       <BotonVolver />
@@ -52,8 +99,8 @@ export default function Inventario(){
 
 
       <ScrollView>
-        {categorias.map((item) => (
-          <View key={item.id} style={styles.product}>
+        {datos.map((item) => (
+          <View key={item.id_detalle} style={styles.product}>
 
             <View>
               <Text style={styles.name}>
@@ -69,14 +116,6 @@ export default function Inventario(){
             <View>
               <Text style={styles.stock}>
                 {item.cantidad}
-              </Text>
-
-              <Text style={
-                item.estado === 'Disponible'
-                ? styles.available
-                : styles.warning
-              }>
-                {item.estado}
               </Text>
             </View>
 
