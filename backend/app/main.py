@@ -9,6 +9,8 @@ from app.routes import marca_producto
 from app.routes import tipo_documento
 from app.routes import entradas_salidas
 from app.routes import detalle_pedido
+from app.routes import inventarios
+from app.routes import ubicacion
 
 # Crear aplicación
 app = FastAPI(
@@ -37,6 +39,8 @@ app.include_router(tipo_documento.router)
 app.include_router(entradas_salidas.router)
 app.include_router(pedido.router)
 app.include_router(detalle_pedido.router)
+app.include_router(inventarios.router)
+app.include_router(ubicacion.router)
 
 
 @app.get("/")

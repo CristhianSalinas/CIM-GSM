@@ -7,7 +7,7 @@ from app.schemas.usuario import UsuarioRespuesta
 
 
 router = APIRouter(
-    prefix="/api/usuarios",
+    prefix="/api/Usuarios",
     tags=["Usuarios"]
 )
 

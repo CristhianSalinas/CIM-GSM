@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity  } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, Modal } from 'react-native';
 
 import { useEffect, useState } from 'react';
 
@@ -68,6 +68,65 @@ export default function Conteo(){
         }
     };
 
+    const enviarInventario = async () => {
+        if (!productoSeleccionado) {
+            alert('Selecciona un producto.');
+            return;
+        }
+
+        if (
+            nuevoConteo.trim() === '' ||
+            !Number.isInteger(Number(nuevoConteo)) ||
+            Number(nuevoConteo) < 0
+        ) {
+            alert('Ingresa una cantidad válida.');
+            return;
+        }
+        try {
+            const respuesta = await fetch(
+                `${API_URL}/api/inventarios/enviar`,
+                {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        id_usuario: 1,
+                        id_ubicacion: 1,
+                        id_producto: productoSeleccionado?.id_producto,
+                        cantidad_contada: Number(nuevoConteo),
+                        observacion: 'Conteo físico'
+                    })
+                }
+            );
+
+                if (!respuesta.ok) {
+                    const error = await respuesta.json();
+                    throw new Error(JSON.stringify(error));
+                }
+
+                const datos = await respuesta.json();
+
+                console.log('Inventario registrado:', datos);
+
+                await cargarProductos();
+                await cargarEstadisticas();
+
+                setProductoSeleccionado(null);
+                alert('Inventario registrado correctamente.');
+
+        } catch (error) {
+            console.log('Error al registrar inventario:', error);
+            alert('No se pudo registrar el inventario.');
+        }
+    };
+
+    const [productoSeleccionado, setProductoSeleccionado] =
+        useState<Producto | null>(null);
+
+
+    const [nuevoConteo, setNuevoConteo] = useState('');
+
 
     const [filtroStock, setFiltroStock] = useState<'todos' | 'bajo' | 'agotados'>('todos');
 
@@ -86,6 +145,7 @@ export default function Conteo(){
 
         return coincideBusqueda && coincideStock;
     });
+
 
     useEffect(() => {
         cargarProductos();
@@ -157,12 +217,19 @@ export default function Conteo(){
 
 
                       <View style={styles.tableHeader}>
-                        <Text style={styles.headerText}>Producto</Text>
-                        <Text style={styles.headerText}>Stock</Text>
+                          <Text style={styles.headerText}>Producto</Text>
+                          <Text style={styles.headerText}>Stock</Text>
                       </View>
 
                       {productosFiltrados.map((item) => (
-                          <View key={item.id_producto} style={styles.product}>
+                          <TouchableOpacity
+                              key={item.id_producto}
+                              style={styles.product}
+                              onPress={() => {
+                                  setProductoSeleccionado(item);
+                                  setNuevoConteo(String(item.cantidad_fisica ?? 0));
+                              }}
+                          >
 
                               <View>
                                   <Text style={styles.name}>
@@ -188,7 +255,7 @@ export default function Conteo(){
                                     </Text>*/}
                               </View>
 
-                          </View>
+                          </TouchableOpacity>
                       ))}
 
                       {productosFiltrados.length === 0 && (
@@ -198,6 +265,69 @@ export default function Conteo(){
                       )}
                   </View>
               </ScrollView>
+              <Modal
+                  visible={productoSeleccionado !== null}
+                  transparent
+                  animationType="slide"
+                  onRequestClose={() => setProductoSeleccionado(null)}
+              >
+                  <View style={styles.modalFondo}>
+                      <View style={styles.modalContenido}>
+
+                          <Text style={styles.modalTitulo}>
+                              Conteo físico
+                          </Text>
+
+                          <Text style={styles.modalNombre}>
+                              {productoSeleccionado?.nombre}
+                          </Text>
+
+                          <Text style={styles.category}>
+                              Código: {productoSeleccionado?.codigo_sm}
+                          </Text>
+
+                          <Text style={styles.label}>
+                              Existencias registradas
+                          </Text>
+
+                          <Text style={styles.stock}>
+                              {productoSeleccionado?.cantidad_fisica}
+                          </Text>
+
+                          <Text style={styles.label}>
+                              Nueva cantidad contada
+                          </Text>
+
+                          <TextInput
+                              style={styles.busqueda}
+                              value={nuevoConteo}
+                              onChangeText={setNuevoConteo}
+                              keyboardType="numeric"
+                              placeholder="Ingresa la cantidad encontrada"
+                          />
+
+                          <TouchableOpacity
+                              style={styles.botonGuardar}
+                              onPress={enviarInventario}
+                          >
+                              <Text style={styles.textoBoton}>
+                                  Guardar conteo
+                              </Text>
+                          </TouchableOpacity>
+
+                          <TouchableOpacity
+                              style={styles.botonCancelar}
+                              onPress={() => setProductoSeleccionado(null)}
+                          >
+                              <Text style={styles.textoCancelar}>
+                                  Cancelar
+                              </Text>
+                          </TouchableOpacity>
+
+                      </View>
+                  </View>
+              </Modal>          
+
         </View>
     );
   }
@@ -215,6 +345,57 @@ const styles = StyleSheet.create({
       borderWidth: 2,
       borderColor: '#2563EB',
       backgroundColor: '#EFF6FF'
+  },
+
+  modalFondo: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20
+  },
+
+  modalContenido: {
+      backgroundColor: '#FFFFFF',
+      width: '100%',
+      padding: 25,
+      borderRadius: 18
+  },
+
+  modalTitulo: {
+      fontSize: 24,
+      fontWeight: 'bold',
+      color: '#111827',
+      marginBottom: 15
+  },
+
+  modalNombre: {
+      fontSize: 18,
+      fontWeight: 'bold',
+      color: '#111827'
+  },
+
+  botonGuardar: {
+      backgroundColor: '#2563EB',
+      padding: 15,
+      borderRadius: 10,
+      alignItems: 'center',
+      marginTop: 10
+  },
+
+  textoBoton: {
+      color: '#FFFFFF',
+      fontWeight: 'bold'
+  },
+
+  botonCancelar: {
+      padding: 12,
+      alignItems: 'center'
+  },
+
+  textoCancelar: {
+      color: '#6B7280',
+      fontWeight: 'bold'
   },
 
   busqueda: {
