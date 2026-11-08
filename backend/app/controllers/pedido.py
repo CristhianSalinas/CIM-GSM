@@ -3,19 +3,65 @@ from app.models.pedido import Pedido
 from app.models.cliente import Cliente
 from app.models.detalle_pedido import DetallePedido
 from app.models.producto import Producto
+from sqlalchemy import func
+from app.   schemas.pedido import PedidoConProductosCrear
 
 
 def obtener_pedidos(db: Session):
     return db.query(Pedido).all()
 
-def crear_pedido(db: Session, datos: PedidoCrear):
+def buscar_productos(db: Session, busqueda: str):
+    return db.query(Producto).filter(
+        (Producto.codigo_sm.ilike(f"%{busqueda}%")) |
+        (Producto.nombre.ilike(f"%{busqueda}%"))
+    ).limit(20).all()
+
+def crear_pedido(
+    db: Session,
+    datos: PedidoConProductosCrear,
+    tipo_movimiento: int = 1
+):
     try:
+        # Validar cliente
+        cliente = db.query(Cliente).filter(
+            Cliente.id_cliente == datos.id_cliente
+        ).first()
+
+        if not cliente:
+            raise ValueError("El cliente no existe.")
+
+        # Validar que existan productos
+        if not datos.productos:
+            raise ValueError("Debes agregar al menos un producto.")
+
+        # Validar productos y cantidades
+        for item in datos.productos:
+
+            if item.cantidad <= 0:
+                raise ValueError("La cantidad debe ser mayor que cero.")
+
+            producto = db.query(Producto).filter(
+                Producto.id_producto == item.id_producto
+            ).first()
+
+            if not producto:
+                raise ValueError(
+                    f"El producto {item.id_producto} no existe."
+                )
+
+        # Generar número de pedido
+        ultimo_numero = db.query(
+            func.max(Pedido.numero_pedido)
+        ).scalar()
+
+        numero_generado = (ultimo_numero or 0) + 1
+
         # Crear pedido
         pedido = Pedido(
             numero_pedido=numero_generado,
             id_cliente=datos.id_cliente,
             id_estado=2,
-            id_entrada=1
+            id_entrada=tipo_movimiento
         )
 
         db.add(pedido)
@@ -23,6 +69,7 @@ def crear_pedido(db: Session, datos: PedidoCrear):
 
         # Agregar productos al pedido
         for item in datos.productos:
+
             detalle = DetallePedido(
                 id_pedido=pedido.id_pedido,
                 id_producto=item.id_producto,

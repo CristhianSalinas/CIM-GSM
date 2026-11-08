@@ -2,6 +2,7 @@ import { View, Text, StyleSheet, ScrollView, Alert, Pressable } from 'react-nati
 import React, { useState, useEffect } from 'react';
 import { useLocalSearchParams } from 'expo-router';
 import { DataTable } from 'react-native-paper';
+import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
 
 import CustomModal from '../../componentes/botones/ScreenModal';
 import BotonVolver from '../../componentes/botones/boton_volver';
@@ -135,89 +136,97 @@ export default function Salida() {
     }, [id_pedido]);
 
   return (
-    <View style={styles.container}>
-      <BotonVolver />
+<SafeAreaProvider>
+      <SafeAreaView style={styles.safeArea}>
+            <View style={styles.container}>
+              <BotonVolver />
 
-      <Text style={styles.title}>Entrega de mercancía</Text>
-      <Text style={styles.subtitle}>
-        Entrega de productos y existencias, por favor asegúrese de que la información sea correcta.
-      </Text>
-      
-      <ScrollView showsVerticalScrollIndicator={false}>
-        {/* Tarjetas de Métricas */}
-        <View style={styles.cards}>
-            <View style={styles.card}>
-                <Text style={styles.number}>{datos.length}</Text>
-                <Text style={styles.label}>Productos</Text>
+              <Text style={styles.title}>Entrega de mercancía</Text>
+              <Text style={styles.subtitle}>
+                Entrega de productos y existencias, por favor asegúrese de que la información sea correcta.
+              </Text>
+              
+              <ScrollView showsVerticalScrollIndicator={false}>
+                {/* Tarjetas de Métricas */}
+                <View style={styles.cards}>
+                    <View style={styles.card}>
+                        <Text style={styles.number}>{datos.length}</Text>
+                        <Text style={styles.label}>Productos</Text>
+                    </View>
+                    <View style={styles.card}>
+                        <Text style={styles.number}>5</Text>
+                        <Text style={styles.label}>Categorías</Text>
+                    </View>
+                    <View style={styles.card}>
+                        <Text style={[styles.number, { color: totalInconsistencias > 0 ? '#DC2626' : '#16A34A' }]}>
+                          {totalInconsistencias}
+                        </Text>
+                        <Text style={styles.label}>Inconsistencias</Text>
+                    </View>
+                </View>
+
+                {/* Tabla */}
+                <DataTable style={styles.tableContainer}>
+                  <DataTable.Header style={styles.tableHeader}>
+                      <DataTable.Title><Text style={styles.headerText}>Código</Text></DataTable.Title>
+                      <DataTable.Title><Text style={styles.headerText}>Producto</Text></DataTable.Title>
+                      <DataTable.Title numeric><Text style={styles.headerText}>Desp. / Solicitado</Text></DataTable.Title>
+                  </DataTable.Header>
+
+                  {datos.map((item) => (
+                    <Pressable
+                        key={item.id_detalle}
+                        onPress={() => {
+                          setProductoSeleccionado(item);
+                          setModalVisible(true);
+                          setNuevoConteo('');
+                        }}
+                        disabled={finalizado}
+                    >
+                      <DataTable.Row style={styles.productRow}>
+                        <DataTable.Cell>
+                          <Text style={styles.cellBold}>{item.codigo_sm}</Text>
+                        </DataTable.Cell>
+
+                        <DataTable.Cell>
+                          <View>
+                            <Text style={styles.name}>{item.nombre}</Text>
+                            <Text style={styles.category}>{item.referencia}</Text>
+                          </View>
+                        </DataTable.Cell>
+
+                        <DataTable.Cell numeric>
+                          <Text style={[styles.stock, { color: item.cantidad_despachada >= item.cantidad_solicitada ? '#16A34A' : '#D97706' }]}>
+                            {item.cantidad_despachada} / {item.cantidad_solicitada}
+                          </Text>
+                        </DataTable.Cell>
+                      </DataTable.Row>
+                    </Pressable>
+                  ))}
+                </DataTable>
+
+                {/* Modal fuera del .map */}
+                <CustomModal
+                    modalVisible={modalVisible}
+                    setModalVisible={setModalVisible}
+                    productoSeleccionado={productoSeleccionado}
+                    nuevoConteo={nuevoConteo}
+                    setNuevoConteo={setNuevoConteo}
+                    ingresarProducto={SalidaProducto}
+                    finalizado={finalizado}
+                />
+              </ScrollView>
             </View>
-            <View style={styles.card}>
-                <Text style={styles.number}>5</Text>
-                <Text style={styles.label}>Categorías</Text>
-            </View>
-            <View style={styles.card}>
-                <Text style={[styles.number, { color: totalInconsistencias > 0 ? '#DC2626' : '#16A34A' }]}>
-                  {totalInconsistencias}
-                </Text>
-                <Text style={styles.label}>Inconsistencias</Text>
-            </View>
-        </View>
-
-        {/* Tabla */}
-        <DataTable style={styles.tableContainer}>
-          <DataTable.Header style={styles.tableHeader}>
-              <DataTable.Title><Text style={styles.headerText}>Código</Text></DataTable.Title>
-              <DataTable.Title><Text style={styles.headerText}>Producto</Text></DataTable.Title>
-              <DataTable.Title numeric><Text style={styles.headerText}>Desp. / Solicitado</Text></DataTable.Title>
-          </DataTable.Header>
-
-          {datos.map((item) => (
-            <Pressable
-                key={item.id_detalle}
-                onPress={() => {
-                   setProductoSeleccionado(item);
-                   setModalVisible(true);
-                   setNuevoConteo('');
-                }}
-                disabled={finalizado}
-            >
-              <DataTable.Row style={styles.productRow}>
-                <DataTable.Cell>
-                  <Text style={styles.cellBold}>{item.codigo_sm}</Text>
-                </DataTable.Cell>
-
-                <DataTable.Cell>
-                  <View>
-                    <Text style={styles.name}>{item.nombre}</Text>
-                    <Text style={styles.category}>{item.referencia}</Text>
-                  </View>
-                </DataTable.Cell>
-
-                <DataTable.Cell numeric>
-                  <Text style={[styles.stock, { color: item.cantidad_despachada >= item.cantidad_solicitada ? '#16A34A' : '#D97706' }]}>
-                    {item.cantidad_despachada} / {item.cantidad_solicitada}
-                  </Text>
-                </DataTable.Cell>
-              </DataTable.Row>
-            </Pressable>
-          ))}
-        </DataTable>
-
-        {/* Modal fuera del .map */}
-        <CustomModal
-            modalVisible={modalVisible}
-            setModalVisible={setModalVisible}
-            productoSeleccionado={productoSeleccionado}
-            nuevoConteo={nuevoConteo}
-            setNuevoConteo={setNuevoConteo}
-            ingresarProducto={SalidaProducto}
-            finalizado={finalizado}
-        />
-      </ScrollView>
-    </View>
+      </SafeAreaView>
+    </SafeAreaProvider>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#F9FAFB',
+  },
   container: {
     flex: 1,
     backgroundColor: '#F5F7FB',

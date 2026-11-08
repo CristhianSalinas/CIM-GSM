@@ -12,6 +12,7 @@ import {
 
 import { useEffect, useState } from 'react';
 import BotonInicio from '../../componentes/botones/boton_inicio';
+import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
 import { API_URL } from '../../constants/api';
 
 interface Producto {
@@ -239,481 +240,484 @@ export default function Conteo() {
     };
 
     return (
+<SafeAreaProvider>
+      <SafeAreaView style={styles.safeArea}>
+                <View style={estilos.container}>
 
-        <View style={estilos.container}>
+                    <ScrollView
+                        showsVerticalScrollIndicator={false}
+                        contentContainerStyle={styles.scrollContent}
+                        keyboardShouldPersistTaps="handled"
+                    >
 
-            <ScrollView
-                showsVerticalScrollIndicator={false}
-                contentContainerStyle={styles.scrollContent}
-                keyboardShouldPersistTaps="handled"
-            >
+                        <View style={estilos.contenido}>
 
-                <View style={estilos.contenido}>
+                            {/* NAVEGACIÓN */}
 
-                    {/* NAVEGACIÓN */}
-
-                    <View style={styles.navegacion}>
-                        <BotonInicio />
-                    </View>
-
-                    {/* ENCABEZADO */}
-
-                    <View style={styles.header}>
-
-                        <View>
-                            <Text style={styles.title}>
-                                Conteo físico
-                            </Text>
-
-                            <Text style={styles.subtitle}>
-                                Control y verificación de existencias del inventario.
-                            </Text>
-                        </View>
-
-                        <View style={styles.headerBadge}>
-                            <View style={styles.headerDot} />
-                            <Text style={styles.headerBadgeText}>
-                                INVENTARIO
-                            </Text>
-                        </View>
-
-                    </View>
-
-                    {/* ESTADÍSTICAS */}
-
-                    <View style={estilos.cards}>
-
-                        <View style={estilos.card}>
-                            <Text style={styles.cardLabel}>
-                                TOTAL PRODUCTOS
-                            </Text>
-
-                            <Text style={styles.number}>
-                                {estadisticas.total_productos}
-                            </Text>
-
-                            <Text style={styles.cardDescription}>
-                                Productos registrados
-                            </Text>
-                        </View>
-
-                        <TouchableOpacity
-                            style={[
-                                estilos.card,
-                                filtroStock === 'bajo' && styles.cardActiva
-                            ]}
-                            activeOpacity={0.8}
-                            onPress={() =>
-                                setFiltroStock(
-                                    filtroStock === 'bajo' ? 'todos' : 'bajo'
-                                )
-                            }
-                        >
-                            <Text style={styles.cardLabel}>
-                                STOCK BAJO
-                            </Text>
-
-                            <Text style={[styles.number, styles.numberWarning]}>
-                                {estadisticas.Stock_Bajo}
-                            </Text>
-
-                            <Text style={styles.cardDescription}>
-                                Requieren atención
-                            </Text>
-                        </TouchableOpacity>
-
-                        <TouchableOpacity
-                            style={[
-                                estilos.card,
-                                filtroStock === 'agotados' && styles.cardActiva
-                            ]}
-                            activeOpacity={0.8}
-                            onPress={() =>
-                                setFiltroStock(
-                                    filtroStock === 'agotados' ? 'todos' : 'agotados'
-                                )
-                            }
-                        >
-                            <Text style={styles.cardLabel}>
-                                AGOTADOS
-                            </Text>
-
-                            <Text style={[styles.number, styles.numberDanger]}>
-                                {estadisticas.Agotados}
-                            </Text>
-
-                            <Text style={styles.cardDescription}>
-                                Sin existencias
-                            </Text>
-                        </TouchableOpacity>
-
-                    </View>
-
-                    {/* CONTENIDO PRINCIPAL */}
-
-                    <View style={styles.panel}>
-
-                        <View style={styles.panelHeader}>
-
-                            <View>
-                                <Text style={styles.sectionTitle}>
-                                    Inventario de productos
-                                </Text>
-
-                                <Text style={styles.sectionSubtitle}>
-                                    Selecciona un producto para realizar el conteo.
-                                </Text>
+                            <View style={styles.navegacion}>
+                                <BotonInicio />
                             </View>
 
-                            <View style={styles.totalBadge}>
-                                <Text style={styles.totalBadgeText}>
-                                    {productosFiltrados.length} productos
-                                </Text>
-                            </View>
+                            {/* ENCABEZADO */}
 
-                        </View>
+                            <View style={styles.header}>
 
-                        {/* BUSCADOR */}
-
-                        <View style={styles.searchContainer}>
-
-                            <Text style={styles.searchIcon}>
-                                ⌕
-                            </Text>
-
-                            <TextInput
-                                style={styles.busqueda}
-                                placeholder="Buscar por nombre, código o referencia..."
-                                placeholderTextColor="#9CA3AF"
-                                value={busqueda}
-                                onChangeText={setBusqueda}
-                            />
-
-                            {busqueda.length > 0 && (
-                                <TouchableOpacity
-                                    onPress={() => setBusqueda('')}
-                                >
-                                    <Text style={styles.clearSearch}>
-                                        ✕
+                                <View>
+                                    <Text style={styles.title}>
+                                        Conteo físico
                                     </Text>
-                                </TouchableOpacity>
-                            )}
 
-                        </View>
+                                    <Text style={styles.subtitle}>
+                                        Control y verificación de existencias del inventario.
+                                    </Text>
+                                </View>
 
-                        {/* FILTROS */}
+                                <View style={styles.headerBadge}>
+                                    <View style={styles.headerDot} />
+                                    <Text style={styles.headerBadgeText}>
+                                        INVENTARIO
+                                    </Text>
+                                </View>
 
-                        <View style={styles.filterContainer}>
+                            </View>
 
-                            {[
-                                { valor: 'todos', texto: 'Todos' },
-                                { valor: 'bajo', texto: 'Stock bajo' },
-                                { valor: 'agotados', texto: 'Agotados' }
-                            ].map((filtro) => (
+                            {/* ESTADÍSTICAS */}
+
+                            <View style={estilos.cards}>
+
+                                <View style={estilos.card}>
+                                    <Text style={styles.cardLabel}>
+                                        TOTAL PRODUCTOS
+                                    </Text>
+
+                                    <Text style={styles.number}>
+                                        {estadisticas.total_productos}
+                                    </Text>
+
+                                    <Text style={styles.cardDescription}>
+                                        Productos registrados
+                                    </Text>
+                                </View>
 
                                 <TouchableOpacity
-                                    key={filtro.valor}
                                     style={[
-                                        styles.filterButton,
-                                        filtroStock === filtro.valor &&
-                                        styles.filterActive
+                                        estilos.card,
+                                        filtroStock === 'bajo' && styles.cardActiva
                                     ]}
+                                    activeOpacity={0.8}
                                     onPress={() =>
                                         setFiltroStock(
-                                            filtro.valor as 'todos' | 'bajo' | 'agotados'
+                                            filtroStock === 'bajo' ? 'todos' : 'bajo'
                                         )
                                     }
                                 >
-                                    <Text style={[
-                                        styles.filterText,
-                                        filtroStock === filtro.valor &&
-                                        styles.filterTextActive
-                                    ]}>
-                                        {filtro.texto}
+                                    <Text style={styles.cardLabel}>
+                                        STOCK BAJO
+                                    </Text>
+
+                                    <Text style={[styles.number, styles.numberWarning]}>
+                                        {estadisticas.Stock_Bajo}
+                                    </Text>
+
+                                    <Text style={styles.cardDescription}>
+                                        Requieren atención
                                     </Text>
                                 </TouchableOpacity>
 
-                            ))}
-
-                        </View>
-
-                        {/* TABLA WEB */}
-
-                        {esPantallaGrande && (
-
-                            <View style={styles.tableHeader}>
-
-                                <Text style={[styles.columnHeader, styles.colProducto]}>
-                                    PRODUCTO
-                                </Text>
-
-                                <Text style={[styles.columnHeader, styles.colCodigo]}>
-                                    CÓDIGO
-                                </Text>
-
-                                <Text style={[styles.columnHeader, styles.colReferencia]}>
-                                    REFERENCIA
-                                </Text>
-
-                                <Text style={[styles.columnHeader, styles.colStock]}>
-                                    EXISTENCIAS
-                                </Text>
-
-                                <Text style={[styles.columnHeader, styles.colEstado]}>
-                                    ESTADO
-                                </Text>
-
-                            </View>
-
-                        )}
-
-                        {/* LISTADO DE PRODUCTOS */}
-
-                        {productosFiltrados.map((item) => {
-
-                            const estado = obtenerEstadoStock(
-                                item.cantidad_fisica
-                            );
-
-                            return (
-
                                 <TouchableOpacity
-                                    key={item.id_producto}
                                     style={[
-                                        styles.product,
-                                        esPantallaGrande && styles.productWeb
+                                        estilos.card,
+                                        filtroStock === 'agotados' && styles.cardActiva
                                     ]}
-                                    activeOpacity={0.7}
-                                    onPress={() => {
-                                        setProductoSeleccionado(item);
-                                        setNuevoConteo(
-                                            String(item.cantidad_fisica ?? 0)
-                                        );
-                                    }}
+                                    activeOpacity={0.8}
+                                    onPress={() =>
+                                        setFiltroStock(
+                                            filtroStock === 'agotados' ? 'todos' : 'agotados'
+                                        )
+                                    }
                                 >
+                                    <Text style={styles.cardLabel}>
+                                        AGOTADOS
+                                    </Text>
 
-                                    <View style={[
-                                        styles.productInfo,
-                                        esPantallaGrande && styles.colProducto
-                                    ]}>
+                                    <Text style={[styles.number, styles.numberDanger]}>
+                                        {estadisticas.Agotados}
+                                    </Text>
 
-                                        <Text style={styles.name}>
-                                            {item.nombre}
-                                        </Text>
-
-                                        {!esPantallaGrande && (
-                                            <Text style={styles.category}>
-                                                Código: {item.codigo_sm}
-                                            </Text>
-                                        )}
-
-                                    </View>
-
-                                    {esPantallaGrande && (
-
-                                        <>
-                                            <Text style={[styles.webCell, styles.colCodigo]}>
-                                                {item.codigo_sm}
-                                            </Text>
-
-                                            <Text style={[styles.webCell, styles.colReferencia]}>
-                                                {item.referencia || '—'}
-                                            </Text>
-                                        </>
-
-                                    )}
-
-                                    <View style={[
-                                        styles.stockContainer,
-                                        esPantallaGrande && styles.colStock
-                                    ]}>
-
-                                        <Text style={styles.stock}>
-                                            {item.cantidad_fisica}
-                                        </Text>
-
-                                        {!esPantallaGrande && (
-                                            <Text style={styles.stockLabel}>
-                                                Unidades
-                                            </Text>
-                                        )}
-
-                                    </View>
-
-                                    <View style={[
-                                        styles.statusContainer,
-                                        esPantallaGrande && styles.colEstado
-                                    ]}>
-
-                                        <View style={[
-                                            styles.statusBadge,
-                                            { backgroundColor: estado.fondo }
-                                        ]}>
-                                            <Text style={[
-                                                styles.statusText,
-                                                { color: estado.color }
-                                            ]}>
-                                                {estado.texto}
-                                            </Text>
-                                        </View>
-
-                                        {!esPantallaGrande && (
-                                            <Text style={styles.actionHint}>
-                                                Tocar para contar
-                                            </Text>
-                                        )}
-
-                                    </View>
-
+                                    <Text style={styles.cardDescription}>
+                                        Sin existencias
+                                    </Text>
                                 </TouchableOpacity>
 
-                            );
+                            </View>
 
-                        })}
+                            {/* CONTENIDO PRINCIPAL */}
 
-                        {/* SIN RESULTADOS */}
+                            <View style={styles.panel}>
 
-                        {productosFiltrados.length === 0 && (
+                                <View style={styles.panelHeader}>
 
-                            <View style={styles.emptyContainer}>
+                                    <View>
+                                        <Text style={styles.sectionTitle}>
+                                            Inventario de productos
+                                        </Text>
 
-                                <Text style={styles.emptyIcon}>
-                                    —
-                                </Text>
+                                        <Text style={styles.sectionSubtitle}>
+                                            Selecciona un producto para realizar el conteo.
+                                        </Text>
+                                    </View>
 
-                                <Text style={styles.emptyTitle}>
-                                    No se encontraron productos
-                                </Text>
+                                    <View style={styles.totalBadge}>
+                                        <Text style={styles.totalBadgeText}>
+                                            {productosFiltrados.length} productos
+                                        </Text>
+                                    </View>
 
-                                <Text style={styles.emptyText}>
-                                    Intenta cambiar los filtros o los términos de búsqueda.
-                                </Text>
+                                </View>
+
+                                {/* BUSCADOR */}
+
+                                <View style={styles.searchContainer}>
+
+                                    <Text style={styles.searchIcon}>
+                                        ⌕
+                                    </Text>
+
+                                    <TextInput
+                                        style={styles.busqueda}
+                                        placeholder="Buscar por nombre, código o referencia..."
+                                        placeholderTextColor="#9CA3AF"
+                                        value={busqueda}
+                                        onChangeText={setBusqueda}
+                                    />
+
+                                    {busqueda.length > 0 && (
+                                        <TouchableOpacity
+                                            onPress={() => setBusqueda('')}
+                                        >
+                                            <Text style={styles.clearSearch}>
+                                                ✕
+                                            </Text>
+                                        </TouchableOpacity>
+                                    )}
+
+                                </View>
+
+                                {/* FILTROS */}
+
+                                <View style={styles.filterContainer}>
+
+                                    {[
+                                        { valor: 'todos', texto: 'Todos' },
+                                        { valor: 'bajo', texto: 'Stock bajo' },
+                                        { valor: 'agotados', texto: 'Agotados' }
+                                    ].map((filtro) => (
+
+                                        <TouchableOpacity
+                                            key={filtro.valor}
+                                            style={[
+                                                styles.filterButton,
+                                                filtroStock === filtro.valor &&
+                                                styles.filterActive
+                                            ]}
+                                            onPress={() =>
+                                                setFiltroStock(
+                                                    filtro.valor as 'todos' | 'bajo' | 'agotados'
+                                                )
+                                            }
+                                        >
+                                            <Text style={[
+                                                styles.filterText,
+                                                filtroStock === filtro.valor &&
+                                                styles.filterTextActive
+                                            ]}>
+                                                {filtro.texto}
+                                            </Text>
+                                        </TouchableOpacity>
+
+                                    ))}
+
+                                </View>
+
+                                {/* TABLA WEB */}
+
+                                {esPantallaGrande && (
+
+                                    <View style={styles.tableHeader}>
+
+                                        <Text style={[styles.columnHeader, styles.colProducto]}>
+                                            PRODUCTO
+                                        </Text>
+
+                                        <Text style={[styles.columnHeader, styles.colCodigo]}>
+                                            CÓDIGO
+                                        </Text>
+
+                                        <Text style={[styles.columnHeader, styles.colReferencia]}>
+                                            REFERENCIA
+                                        </Text>
+
+                                        <Text style={[styles.columnHeader, styles.colStock]}>
+                                            EXISTENCIAS
+                                        </Text>
+
+                                        <Text style={[styles.columnHeader, styles.colEstado]}>
+                                            ESTADO
+                                        </Text>
+
+                                    </View>
+
+                                )}
+
+                                {/* LISTADO DE PRODUCTOS */}
+
+                                {productosFiltrados.map((item) => {
+
+                                    const estado = obtenerEstadoStock(
+                                        item.cantidad_fisica
+                                    );
+
+                                    return (
+
+                                        <TouchableOpacity
+                                            key={item.id_producto}
+                                            style={[
+                                                styles.product,
+                                                esPantallaGrande && styles.productWeb
+                                            ]}
+                                            activeOpacity={0.7}
+                                            onPress={() => {
+                                                setProductoSeleccionado(item);
+                                                setNuevoConteo(
+                                                    String(item.cantidad_fisica ?? 0)
+                                                );
+                                            }}
+                                        >
+
+                                            <View style={[
+                                                styles.productInfo,
+                                                esPantallaGrande && styles.colProducto
+                                            ]}>
+
+                                                <Text style={styles.name}>
+                                                    {item.nombre}
+                                                </Text>
+
+                                                {!esPantallaGrande && (
+                                                    <Text style={styles.category}>
+                                                        Código: {item.codigo_sm}
+                                                    </Text>
+                                                )}
+
+                                            </View>
+
+                                            {esPantallaGrande && (
+
+                                                <>
+                                                    <Text style={[styles.webCell, styles.colCodigo]}>
+                                                        {item.codigo_sm}
+                                                    </Text>
+
+                                                    <Text style={[styles.webCell, styles.colReferencia]}>
+                                                        {item.referencia || '—'}
+                                                    </Text>
+                                                </>
+
+                                            )}
+
+                                            <View style={[
+                                                styles.stockContainer,
+                                                esPantallaGrande && styles.colStock
+                                            ]}>
+
+                                                <Text style={styles.stock}>
+                                                    {item.cantidad_fisica}
+                                                </Text>
+
+                                                {!esPantallaGrande && (
+                                                    <Text style={styles.stockLabel}>
+                                                        Unidades
+                                                    </Text>
+                                                )}
+
+                                            </View>
+
+                                            <View style={[
+                                                styles.statusContainer,
+                                                esPantallaGrande && styles.colEstado
+                                            ]}>
+
+                                                <View style={[
+                                                    styles.statusBadge,
+                                                    { backgroundColor: estado.fondo }
+                                                ]}>
+                                                    <Text style={[
+                                                        styles.statusText,
+                                                        { color: estado.color }
+                                                    ]}>
+                                                        {estado.texto}
+                                                    </Text>
+                                                </View>
+
+                                                {!esPantallaGrande && (
+                                                    <Text style={styles.actionHint}>
+                                                        Tocar para contar
+                                                    </Text>
+                                                )}
+
+                                            </View>
+
+                                        </TouchableOpacity>
+
+                                    );
+
+                                })}
+
+                                {/* SIN RESULTADOS */}
+
+                                {productosFiltrados.length === 0 && (
+
+                                    <View style={styles.emptyContainer}>
+
+                                        <Text style={styles.emptyIcon}>
+                                            —
+                                        </Text>
+
+                                        <Text style={styles.emptyTitle}>
+                                            No se encontraron productos
+                                        </Text>
+
+                                        <Text style={styles.emptyText}>
+                                            Intenta cambiar los filtros o los términos de búsqueda.
+                                        </Text>
+
+                                    </View>
+
+                                )}
+
+                                {/* PIE DE TABLA */}
+
+                                <View style={styles.panelFooter}>
+                                    <Text style={styles.footerText}>
+                                        CIM · Control de Inventarios y Movimientos
+                                    </Text>
+                                </View>
 
                             </View>
 
-                        )}
-
-                        {/* PIE DE TABLA */}
-
-                        <View style={styles.panelFooter}>
-                            <Text style={styles.footerText}>
-                                CIM · Control de Inventarios y Movimientos
-                            </Text>
                         </View>
 
-                    </View>
+                    </ScrollView>
 
-                </View>
+                    {/* MODAL DE CONTEO */}
 
-            </ScrollView>
+                    <Modal
+                        visible={productoSeleccionado !== null}
+                        transparent
+                        animationType="fade"
+                        onRequestClose={() => setProductoSeleccionado(null)}
+                    >
 
-            {/* MODAL DE CONTEO */}
+                        <View style={styles.modalFondo}>
 
-            <Modal
-                visible={productoSeleccionado !== null}
-                transparent
-                animationType="fade"
-                onRequestClose={() => setProductoSeleccionado(null)}
-            >
+                            <View style={estilos.modalContenido}>
 
-                <View style={styles.modalFondo}>
+                                <View style={styles.modalHeader}>
 
-                    <View style={estilos.modalContenido}>
+                                    <View>
+                                        <Text style={styles.modalTitulo}>
+                                            Registrar conteo
+                                        </Text>
 
-                        <View style={styles.modalHeader}>
+                                        <Text style={styles.modalSubtitle}>
+                                            Verificación de existencias físicas
+                                        </Text>
+                                    </View>
 
-                            <View>
-                                <Text style={styles.modalTitulo}>
-                                    Registrar conteo
+                                    <TouchableOpacity
+                                        style={styles.closeButton}
+                                        onPress={() => setProductoSeleccionado(null)}
+                                    >
+                                        <Text style={styles.closeButtonText}>
+                                            ✕
+                                        </Text>
+                                    </TouchableOpacity>
+
+                                </View>
+
+                                <View style={styles.modalProduct}>
+
+                                    <Text style={styles.modalNombre}>
+                                        {productoSeleccionado?.nombre}
+                                    </Text>
+
+                                    <Text style={styles.category}>
+                                        Código: {productoSeleccionado?.codigo_sm}
+                                    </Text>
+
+                                </View>
+
+                                <Text style={styles.inputLabel}>
+                                    EXISTENCIAS REGISTRADAS
                                 </Text>
 
-                                <Text style={styles.modalSubtitle}>
-                                    Verificación de existencias físicas
+                                <View style={styles.currentStock}>
+
+                                    <Text style={styles.currentStockNumber}>
+                                        {productoSeleccionado?.cantidad_fisica}
+                                    </Text>
+
+                                    <Text style={styles.currentStockText}>
+                                        Unidades registradas en el sistema
+                                    </Text>
+
+                                </View>
+
+                                <Text style={styles.inputLabel}>
+                                    NUEVA CANTIDAD CONTADA
                                 </Text>
+
+                                <TextInput
+                                    style={styles.countInput}
+                                    value={nuevoConteo}
+                                    onChangeText={setNuevoConteo}
+                                    keyboardType="number-pad"
+                                    placeholder="Ingresa la cantidad encontrada"
+                                    placeholderTextColor="#9CA3AF"
+                                />
+
+                                <Text style={styles.helperText}>
+                                    Introduce la cantidad real encontrada físicamente.
+                                </Text>
+
+                                <TouchableOpacity
+                                    style={styles.botonGuardar}
+                                    activeOpacity={0.8}
+                                    onPress={enviarInventario}
+                                >
+                                    <Text style={styles.textoBoton}>
+                                        Confirmar conteo
+                                    </Text>
+                                </TouchableOpacity>
+
+                                <TouchableOpacity
+                                    style={styles.botonCancelar}
+                                    onPress={() => setProductoSeleccionado(null)}
+                                >
+                                    <Text style={styles.textoCancelar}>
+                                        Cancelar
+                                    </Text>
+                                </TouchableOpacity>
+
                             </View>
 
-                            <TouchableOpacity
-                                style={styles.closeButton}
-                                onPress={() => setProductoSeleccionado(null)}
-                            >
-                                <Text style={styles.closeButtonText}>
-                                    ✕
-                                </Text>
-                            </TouchableOpacity>
-
                         </View>
 
-                        <View style={styles.modalProduct}>
-
-                            <Text style={styles.modalNombre}>
-                                {productoSeleccionado?.nombre}
-                            </Text>
-
-                            <Text style={styles.category}>
-                                Código: {productoSeleccionado?.codigo_sm}
-                            </Text>
-
-                        </View>
-
-                        <Text style={styles.inputLabel}>
-                            EXISTENCIAS REGISTRADAS
-                        </Text>
-
-                        <View style={styles.currentStock}>
-
-                            <Text style={styles.currentStockNumber}>
-                                {productoSeleccionado?.cantidad_fisica}
-                            </Text>
-
-                            <Text style={styles.currentStockText}>
-                                Unidades registradas en el sistema
-                            </Text>
-
-                        </View>
-
-                        <Text style={styles.inputLabel}>
-                            NUEVA CANTIDAD CONTADA
-                        </Text>
-
-                        <TextInput
-                            style={styles.countInput}
-                            value={nuevoConteo}
-                            onChangeText={setNuevoConteo}
-                            keyboardType="number-pad"
-                            placeholder="Ingresa la cantidad encontrada"
-                            placeholderTextColor="#9CA3AF"
-                        />
-
-                        <Text style={styles.helperText}>
-                            Introduce la cantidad real encontrada físicamente.
-                        </Text>
-
-                        <TouchableOpacity
-                            style={styles.botonGuardar}
-                            activeOpacity={0.8}
-                            onPress={enviarInventario}
-                        >
-                            <Text style={styles.textoBoton}>
-                                Confirmar conteo
-                            </Text>
-                        </TouchableOpacity>
-
-                        <TouchableOpacity
-                            style={styles.botonCancelar}
-                            onPress={() => setProductoSeleccionado(null)}
-                        >
-                            <Text style={styles.textoCancelar}>
-                                Cancelar
-                            </Text>
-                        </TouchableOpacity>
-
-                    </View>
+                    </Modal>
 
                 </View>
-
-            </Modal>
-
-        </View>
+        </SafeAreaView>
+    </SafeAreaProvider>
     );
 }
 
@@ -724,7 +728,10 @@ export default function Conteo() {
 
 const styles = StyleSheet.create({
 
-    // CONTENEDOR PRINCIPAL
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#F9FAFB',
+    },
 
     container: {
         flex: 1,

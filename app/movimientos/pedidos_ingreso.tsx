@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
 import {
   View, Text, StyleSheet, ScrollView,
   Pressable, ActivityIndicator
@@ -75,99 +76,108 @@ export default function PedidosEntrada() {
   };
 
   return (
-    <View style={styles.container}>
-      <BotonVolver />
+    <SafeAreaProvider>
+          <SafeAreaView style={styles.safeArea}>
+            <View style={styles.container}>
+              <BotonVolver />
 
-      <View style={styles.titleContainer}>
-        <Pressable
-          style={({ pressed }) => [
-            styles.botonCrear,
-            pressed && { opacity: 0.8 }
-          ]}
-          onPress={crearPedido}
-        >
-          <Text style={styles.botonCrearTexto}>＋ Crear pedido</Text>
-        </Pressable>
-        <Text style={styles.title}>Pedidos de entrada</Text>
-        <Text style={styles.subtitle}>
-          Selecciona un pedido para gestionar el ingreso de mercancía de forma rápida.
-        </Text>
-      </View>
-
-      <View style={styles.tableContainer}>
-        {/* Cabecera limpia y estilizada */}
-        <View style={styles.header}>
-          <Text style={[styles.headerText, styles.colPedido]}>Nº Pedido</Text>
-          <Text style={[styles.headerText, styles.colCliente]}>Cliente</Text>
-          <Text style={[styles.headerText, styles.colEstado, { textAlign: 'center' }]}>Estado</Text>
-        </View>
-
-        {cargando ? (
-          <View style={styles.loading}>
-            <ActivityIndicator size="large" color="#c48703" />
-            <Text style={styles.loadingText}>Sincronizando información...</Text>
-          </View>
-        ) : (
-          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 10 }}>
-            {pedidos.map((item) => (
-              <Pressable
-                key={item.id_pedido}
-                style={({ pressed }) => [
-                  styles.product,
-                  pressed && styles.productPressed
-                ]}
-                onPress={() => seleccionarPedido(item)}
-              >
-                <Text style={[styles.cellPedido, styles.colPedido]}>
-                  #{item.numero_pedido}
+              <View style={styles.titleContainer}>
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.botonCrear,
+                    pressed && { opacity: 0.8 }
+                  ]}
+                  onPress={crearPedido}
+                >
+                  <Text style={styles.botonCrearTexto}>＋ Crear pedido</Text>
+                </Pressable>
+                <Text style={styles.title}>Pedidos de entrada</Text>
+                <Text style={styles.subtitle}>
+                  Selecciona un pedido para gestionar el ingreso de mercancía de forma rápida.
                 </Text>
-
-                <Text style={[styles.cellCliente, styles.colCliente]} numberOfLines={2}>
-                  {item.cliente}
-                </Text>
-
-                <View style={[styles.colEstado, styles.estadoContainer]}>
-                  <Text style={[styles.estadoBase, obtenerEstiloEstado(item.id_estado)]}>
-                    {obtenerEstado(item.id_estado)}
-                  </Text>
-                </View>
-              </Pressable>
-            ))}
-
-            {pedidos.length === 0 && (
-              <View style={styles.emptyContainer}>
-                <Text style={styles.emptyIcon}>📦</Text>
-                <Text style={styles.empty}>No hay pedidos de entrada listados por el momento.</Text>
               </View>
-            )}
-          </ScrollView>
-        )}
-      </View>
-    </View>
+
+              <View style={styles.tableContainer}>
+                {/* Cabecera limpia y estilizada */}
+                <View style={styles.header}>
+                  <Text style={[styles.headerText, styles.colPedido]}>Nº Pedido</Text>
+                  <Text style={[styles.headerText, styles.colCliente]}>Cliente</Text>
+                  <Text style={[styles.headerText, styles.colEstado, { textAlign: 'center' }]}>Estado</Text>
+                </View>
+
+                {cargando ? (
+                  <View style={styles.loading}>
+                    <ActivityIndicator size="large" color="#c48703" />
+                    <Text style={styles.loadingText}>Sincronizando información...</Text>
+                  </View>
+                ) : (
+                  <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 10 }}>
+                    {pedidos.map((item) => (
+                      <Pressable
+                        key={item.id_pedido}
+                        style={({ pressed }) => [
+                          styles.product,
+                          pressed && styles.productPressed
+                        ]}
+                        onPress={() => seleccionarPedido(item)}
+                      >
+                        <Text style={[styles.cellPedido, styles.colPedido]}>
+                          #{item.numero_pedido}
+                        </Text>
+
+                        <Text style={[styles.cellCliente, styles.colCliente]} numberOfLines={2}>
+                          {item.cliente}
+                        </Text>
+
+                        <View style={[styles.colEstado, styles.estadoContainer]}>
+                          <Text style={[styles.estadoBase, obtenerEstiloEstado(item.id_estado)]}>
+                            {obtenerEstado(item.id_estado)}
+                          </Text>
+                        </View>
+                      </Pressable>
+                    ))}
+
+                    {pedidos.length === 0 && (
+                      <View style={styles.emptyContainer}>
+                        <Text style={styles.emptyIcon}>📦</Text>
+                        <Text style={styles.empty}>No hay pedidos de entrada listados por el momento.</Text>
+                      </View>
+                    )}
+                  </ScrollView>
+                )}
+              </View>
+            </View>
+        </SafeAreaView>
+    </SafeAreaProvider>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8FAFC', // Fondo gris claro sutil (Slate 50) para que resalte la tabla
+    backgroundColor: '#F8FAFC',
     paddingHorizontal: 20,
-    paddingTop: 24,
+    paddingTop: 20,
+  },
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#F9FAFB',
   },
   titleContainer: {
-    marginTop: 15,
-    marginBottom: 20,
+    marginTop: 5,
+    marginBottom: 15,
   },
   title: {
     fontSize: 26,
     fontWeight: '800',
-    color: '#0F172A', // Slate 900 (Contraste premium)
+    color: '#0F172A',
     letterSpacing: -0.3,
   },
   subtitle: {
     fontSize: 14,
-    color: '#64748B', // Slate 500
-    marginTop: 6,
+    color: '#64748B',
+    marginTop: 4,
+    marginBottom: 0,
     lineHeight: 20,
   },
   tableContainer: {
@@ -175,20 +185,19 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: '#E2E8F0', // Borde suave Slate 200
-    // Sombras ligeras y elegantes
+    borderColor: '#E2E8F0',
     shadowColor: '#0F172A',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.05,
     shadowRadius: 12,
     elevation: 2,
-    marginBottom: 16,
+    marginBottom: 20,
     overflow: 'hidden',
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#0F172A', // Cabecera oscura Slate 900 para una presencia sofisticada
+    backgroundColor: '#0F172A',
     paddingVertical: 14,
     paddingHorizontal: 16,
   },
@@ -226,7 +235,7 @@ const styles = StyleSheet.create({
   cellPedido: {
     color: '#0F172A',
     fontSize: 14,
-    fontWeight: '700', // El número de pedido destaca más
+    fontWeight: '700',
   },
   cellCliente: {
     color: '#334155',
@@ -239,30 +248,33 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   botonCrear: {
-  backgroundColor: '#C48703',
-  paddingVertical: 13,
-  paddingHorizontal: 18,
-  borderRadius: 10,
-  alignSelf: 'flex-end',
-  marginBottom: 16,
-},
-
-botonCrearTexto: {
-  color: '#FFFFFF',
-  fontSize: 14,
-  fontWeight: '700',
-},
+    backgroundColor: '#C48703',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 10,
+    alignSelf: 'flex-end',
+    marginBottom: 10,
+    shadowColor: '#C48703',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  botonCrearTexto: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '700',
+  },
   estadoBase: {
     fontSize: 11,
     fontWeight: '700',
     paddingHorizontal: 10,
     paddingVertical: 4,
-    borderRadius: 6, // Esquinas semirredondeadas más profesionales estilo web/dashboard
+    borderRadius: 6,
     overflow: 'hidden',
     textAlign: 'center',
     minWidth: 85,
   },
-  // Paletas de estados modernizadas (Colores menos saturados y más corporativos)
   finalizado: {
     color: '#166534',
     backgroundColor: '#DCFCE7',
@@ -291,6 +303,7 @@ botonCrearTexto: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    paddingVertical: 40,
   },
   loadingText: {
     color: '#64748B',
@@ -312,5 +325,6 @@ botonCrearTexto: {
     fontSize: 14,
     fontWeight: '500',
     textAlign: 'center',
+    paddingHorizontal: 20,
   },
 });

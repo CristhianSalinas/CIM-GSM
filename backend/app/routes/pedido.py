@@ -2,13 +2,15 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.config.database import get_db
-from app.schemas.pedido import PedidoRespuesta
+from app.schemas.pedido import PedidoRespuesta, PedidoConProductosCrear
 from app.controllers.pedido import (
     obtener_pedidos, 
     obtener_pedidos_por_tipo, 
     obtener_productos_pedidos,
     finalizar_pedido,
-    obtener_estado_pedido)
+    obtener_estado_pedido,
+    crear_pedido, 
+    buscar_productos)
 
 
 
@@ -18,6 +20,13 @@ router = APIRouter(
     prefix="/api/pedidos",
     tags=["Pedidos"]
 )
+
+@router.get("/buscar")
+def buscar_productos_ruta(
+    busqueda: str,
+    db: Session = Depends(get_db)
+):
+    return buscar_productos(db, busqueda)
 
 
 @router.get("/", response_model=list[PedidoRespuesta])
@@ -72,3 +81,51 @@ def consultar_estado_pedido(
         )
 
     return resultado
+
+
+@router.post("/crear", response_model=PedidoRespuesta)
+def registrar_pedido(
+    datos: PedidoConProductosCrear,
+    db: Session = Depends(get_db)
+):
+    try:
+        return crear_pedido(db, datos)
+
+    except ValueError as e:
+        raise HTTPException(
+            status_code=400,
+            detail=str(e)
+        )
+
+    except Exception as e:
+        print("ERROR AL CREAR PEDIDO:", e)
+        raise HTTPException(
+            status_code=500,
+            detail="Error interno al crear el pedido."
+        )
+
+    
+@router.post("/crear-salida", response_model=PedidoRespuesta)
+def registrar_salida(
+    datos: PedidoConProductosCrear,
+    db: Session = Depends(get_db)
+):
+    try:
+        return crear_pedido(
+            db,
+            datos,
+            tipo_movimiento=2
+        )
+
+    except ValueError as e:
+        raise HTTPException(
+            status_code=400,
+            detail=str(e)
+        )
+
+    except Exception as e:
+        print("ERROR AL CREAR SALIDA:", e)
+        raise HTTPException(
+            status_code=500,
+            detail="Error interno al crear la salida."
+        )

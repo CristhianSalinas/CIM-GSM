@@ -1,12 +1,13 @@
-
 import { useEffect, useState } from 'react';
 import {
   View, Text, StyleSheet, ScrollView,
   Pressable, ActivityIndicator
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
 
 import BotonVolver from '../../componentes/botones/boton_volver';
+import { API_URL } from '../../constants/api';
 
 interface Pedido {
   id_pedido: number;
@@ -15,8 +16,7 @@ interface Pedido {
   id_entrada: number;
 }
 
-export default function PedidosEntrada() {
-  const API_URL = "http://127.0.0.1:8000";
+export default function PedidosSalida() {
   const router = useRouter();
 
   const [pedidos, setPedidos] = useState<Pedido[]>([]);
@@ -36,7 +36,7 @@ export default function PedidosEntrada() {
       setPedidos(datos);
 
     } catch (error) {
-      console.log("Error al cargar pedidos:", error);
+      console.log('Error al cargar pedidos:', error);
     } finally {
       setCargando(false);
     }
@@ -46,9 +46,15 @@ export default function PedidosEntrada() {
     cargarPedidos();
   }, []);
 
+  // Abrir pantalla para crear salida
+  const crearSalida = () => {
+    router.push('/pedidos/CrearSalida');
+  };
+
+  // Seleccionar salida
   const seleccionarPedido = (pedido: Pedido) => {
     router.push({
-      pathname: "/movimientos/Salida",
+      pathname: '/movimientos/Salida',
       params: {
         id_pedido: String(pedido.id_pedido)
       }
@@ -56,95 +62,226 @@ export default function PedidosEntrada() {
   };
 
   return (
-    <View style={styles.container}>
-      <BotonVolver />
+    <SafeAreaProvider>
+          <SafeAreaView style={styles.safeArea}>
+            <View style={styles.container}>
 
-      <Text style={styles.title}>Salida de entrada</Text>
+              <BotonVolver />
 
-      <Text style={styles.subtitle}>
-        Selecciona un pedido para registrar la salida.
-      </Text>
+              <View style={styles.titleContainer}>
 
-      <View style={styles.header}>
-        <Text style={styles.headerText}>Pedido</Text>
-        <Text style={styles.headerText}>Cliente</Text>
-      </View>
+                <Text style={styles.title}>
+                  Salidas de mercancía
+                </Text>
 
-      {cargando ? (
-        <ActivityIndicator size="large" />
-      ) : (
-        <ScrollView>
-          {pedidos.map((item) => (
-            <Pressable
-              key={item.id_pedido}
-              style={styles.product}
-              onPress={() => seleccionarPedido(item)}
-            >
-              <Text style={styles.cell}>
-                {item.numero_pedido}
-              </Text>
+                <Text style={styles.subtitle}>
+                  Selecciona una salida para gestionar el despacho de mercancía.
+                </Text>
 
-              <Text style={styles.cell}>
-                {item.cliente}
-              </Text>
-            </Pressable>
-          ))}
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.botonCrear,
+                    pressed && { opacity: 0.85, transform: [{ scale: 0.99 }] }
+                  ]}
+                  onPress={crearSalida}
+                >
+                  <Text style={styles.botonCrearTexto}>
+                    ＋ Crear salida
+                  </Text>
+                </Pressable>
 
-          {pedidos.length === 0 && (
-            <Text style={styles.empty}>
-              No hay pedidos de entrada disponibles.
-            </Text>
-          )}
-        </ScrollView>
-      )}
-    </View>
+              </View>
+
+              <View style={styles.header}>
+                <Text style={styles.headerText}>PEDIDO</Text>
+                <Text style={[styles.headerText, styles.headerTextRight]}>CLIENTE</Text>
+              </View>
+
+              {cargando ? (
+                <View style={styles.loaderContainer}>
+                  <ActivityIndicator size="large" color="#2563eb" />
+                </View>
+              ) : (
+                <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+                  {pedidos.map((item) => (
+                    <Pressable
+                      key={item.id_pedido}
+                      style={({ pressed }) => [
+                        styles.product,
+                        pressed && styles.productPressed
+                      ]}
+                      onPress={() => seleccionarPedido(item)}
+                    >
+                      <View style={styles.cellPedidoContainer}>
+                        <Text style={styles.cellPedidoLabel}>Nº</Text>
+                        <Text style={styles.cellPedido}>
+                          {item.numero_pedido}
+                        </Text>
+                      </View>
+
+                      <Text style={styles.cellCliente} numberOfLines={1}>
+                        {item.cliente}
+                      </Text>
+                    </Pressable>
+                  ))}
+
+                  {pedidos.length === 0 && (
+                    <View style={styles.emptyContainer}>
+                      <Text style={styles.empty}>
+                        No hay salidas disponibles.
+                      </Text>
+                    </View>
+                  )}
+                </ScrollView>
+              )}
+          </View>
+      </SafeAreaView>
+    </SafeAreaProvider>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5F7FB',
-    padding: 20
+    backgroundColor: '#F8FAFC',
+    paddingHorizontal: 20,
+    paddingTop: 10,
   },
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#F9FAFB',
+  },
+
+  titleContainer: {
+    marginBottom: 20,
+    marginTop: 10,
+  },
+
   title: {
-    fontSize: 30,
-    fontWeight: 'bold',
-    color: '#111827'
+    fontSize: 26,
+    fontWeight: '700',
+    color: '#0F172A',
+    letterSpacing: -0.5,
   },
+
   subtitle: {
-    color: '#6B7280',
-    marginVertical: 15
+    fontSize: 14,
+    color: '#64748B',
+    marginTop: 6,
+    marginBottom: 16,
+    lineHeight: 20,
   },
+
+  botonCrear: {
+    backgroundColor: '#2563EB',
+    paddingVertical: 14,
+    paddingHorizontal: 18,
+    borderRadius: 12,
+    alignItems: 'center',
+    shadowColor: '#2563EB',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+
+  botonCrearTexto: {
+    color: '#FFFFFF',
+    fontWeight: '600',
+    fontSize: 15,
+    letterSpacing: 0.2,
+  },
+
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    backgroundColor: '#111827',
-    padding: 15,
-    borderRadius: 10
+    backgroundColor: '#1E293B',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 10,
+    marginBottom: 4,
   },
+
   headerText: {
-    color: '#fff',
-    fontWeight: 'bold',
-    flex: 1
+    color: '#94A3B8',
+    fontWeight: '600',
+    fontSize: 12,
+    letterSpacing: 0.8,
+    flex: 1,
   },
+
+  headerTextRight: {
+    textAlign: 'left',
+  },
+
+  scrollContent: {
+    paddingBottom: 30,
+  },
+
+  loaderContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
   product: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    backgroundColor: '#fff',
-    padding: 18,
-    marginTop: 10,
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    marginTop: 8,
     borderRadius: 12,
-    elevation: 2
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    shadowColor: '#64748B',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
   },
-  cell: {
+
+  productPressed: {
+    backgroundColor: '#F1F5F9',
+    borderColor: '#CBD5E1',
+  },
+
+  cellPedidoContainer: {
     flex: 1,
-    color: '#333',
-    fontSize: 14
+    flexDirection: 'row',
+    alignItems: 'center',
   },
+
+  cellPedidoLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#94A3B8',
+    marginRight: 4,
+  },
+
+  cellPedido: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#0F172A',
+  },
+
+  cellCliente: {
+    flex: 1.5,
+    color: '#334155',
+    fontSize: 14,
+    fontWeight: '500',
+  },
+
+  emptyContainer: {
+    padding: 40,
+    alignItems: 'center',
+  },
+
   empty: {
     textAlign: 'center',
-    marginTop: 30,
-    color: '#6B7280'
-  }
+    color: '#94A3B8',
+    fontSize: 14,
+    fontWeight: '500',
+  },
 });

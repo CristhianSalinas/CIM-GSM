@@ -7,6 +7,7 @@ import {
   Platform,
   useWindowDimensions,
 } from 'react-native';
+import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { useRouter } from 'expo-router';
 import BotonInicio from '../../componentes/botones/boton_inicio';
@@ -19,98 +20,103 @@ export default function Index() {
   const pantallaGrande = width >= 768;
 
   return (
-    <ScrollView
-      style={styles.safeArea}
-      contentContainerStyle={styles.scrollContent}
-    >
-      <View
-        style={[
-          styles.container,
-          esWeb && styles.containerWeb,
-        ]}
-      >
-        <BotonInicio />
+    <SafeAreaProvider>
+          <SafeAreaView style={styles.safeArea}>
+            <ScrollView
+              style={styles.safeArea}
+              contentContainerStyle={styles.scrollContent}
+            >
+              <View
+                style={[
+                  styles.container,
+                  esWeb && styles.containerWeb,
+                ]}
+              >
+                <BotonInicio />
 
-        {/* ENCABEZADO */}
-        <View style={styles.header}>
-          <Text style={styles.titulo}>Control de mercancía</Text>
-          <Text style={styles.subtitulo}>
-            Gestiona los ingresos y salidas de productos del inventario.
-          </Text>
-        </View>
+                {/* ENCABEZADO */}
+                <View style={styles.header}>
+                  <Text style={styles.titulo}>Control de mercancía</Text>
+                  <Text style={styles.subtitulo}>
+                    Gestiona los ingresos y salidas de productos del inventario.
+                  </Text>
+                </View>
 
-        {/* TARJETAS */}
-        <View
-          style={[
-            styles.contenedor,
-            pantallaGrande && styles.contenedorWeb,
-          ]}
-        >
-          {/* INGRESOS */}
-          <Pressable
-            style={({ pressed }) => [
-              styles.card,
-              styles.cardIngreso,
-              pantallaGrande && styles.cardWeb,
-              pressed && styles.cardPressed,
-            ]}
-            onPress={() => router.push('/movimientos/pedidos_ingreso')}
-          >
-            <View style={styles.iconoContainer}>
-              <Text style={styles.icono}>↓</Text>
-            </View>
+                {/* TARJETAS */}
+                <View
+                  style={[
+                    styles.contenedor,
+                    pantallaGrande && styles.contenedorWeb,
+                  ]}
+                >
+                  {/* INGRESOS */}
+                  <Pressable
+                    style={({ pressed }) => [
+                      styles.card,
+                      styles.cardIngreso,
+                      pantallaGrande && styles.cardWeb,
+                      pressed && styles.cardPressed,
+                    ]}
+                    onPress={() => router.push('/movimientos/pedidos_ingreso')}
+                  >
+                    <View style={styles.iconoContainer}>
+                      <Text style={styles.icono}>↓</Text>
+                    </View>
 
-            <Text style={styles.cardTitulo}>Ingreso de mercancía</Text>
+                    <Text style={styles.cardTitulo}>Ingreso de mercancía</Text>
 
-            <Text style={styles.cardDescripcion}>
-              Registra los productos que ingresan a la bodega y actualiza
-              las existencias del inventario.
-            </Text>
+                    <Text style={styles.cardDescripcion}>
+                      Registra los productos que ingresan a la bodega y actualiza
+                      las existencias del inventario.
+                    </Text>
 
-            <View style={styles.cardFooter}>
-              <Text style={styles.cardAccion}>Registrar ingreso</Text>
-              <Text style={styles.flecha}>→</Text>
-            </View>
-          </Pressable>
+                    <View style={styles.cardFooter}>
+                      <Text style={styles.cardAccion}>Registrar ingreso</Text>
+                      <Text style={styles.flecha}>→</Text>
+                    </View>
+                  </Pressable>
 
-          {/* SALIDAS */}
-          <Pressable
-            style={({ pressed }) => [
-              styles.card,
-              styles.cardSalida,
-              pantallaGrande && styles.cardWeb,
-              pressed && styles.cardPressed,
-            ]}
-            onPress={() => router.push('/movimientos/pedidos_salida')}
-          >
-            <View style={styles.iconoContainer}>
-              <Text style={styles.icono}>↑</Text>
-            </View>
+                  {/* SALIDAS */}
+                  <Pressable
+                    style={({ pressed }) => [
+                      styles.card,
+                      styles.cardSalida,
+                      pantallaGrande && styles.cardWeb,
+                      pressed && styles.cardPressed,
+                    ]}
+                    onPress={() => router.push('/movimientos/pedidos_salida')}
+                  >
+                    <View style={styles.iconoContainer}>
+                      <Text style={styles.icono}>↑</Text>
+                    </View>
 
-            <Text style={styles.cardTitulo}>Salida de mercancía</Text>
+                    <Text style={styles.cardTitulo}>Salida de mercancía</Text>
 
-            <Text style={styles.cardDescripcion}>
-              Gestiona los despachos de productos y controla las cantidades
-              que salen de la bodega.
-            </Text>
+                    <Text style={styles.cardDescripcion}>
+                      Gestiona los despachos de productos y controla las cantidades
+                      que salen de la bodega.
+                    </Text>
 
-            <View style={styles.cardFooter}>
-              <Text style={styles.cardAccion}>Registrar salida</Text>
-              <Text style={styles.flecha}>→</Text>
-            </View>
-          </Pressable>
-        </View>
+                    <View style={styles.cardFooter}>
+                      <Text style={styles.cardAccion}>Registrar salida</Text>
+                      <Text style={styles.flecha}>→</Text>
+                    </View>
+                  </Pressable>
+                </View>
 
-        {/* PIE DE PÁGINA */}
-        <Text style={styles.footer}>
-          CIM · Control de Inventarios y Movimientos
-        </Text>
-      </View>
-    </ScrollView>
+                {/* PIE DE PÁGINA */}
+                <Text style={styles.footer}>
+                  CIM · Control de Inventarios y Movimientos
+                </Text>
+              </View>
+            </ScrollView>
+      </SafeAreaView>
+    </SafeAreaProvider>
   );
 }
 
 const styles = StyleSheet.create({
+  
   safeArea: {
     flex: 1,
     backgroundColor: '#F3F5F9',
