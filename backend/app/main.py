@@ -5,12 +5,14 @@ from app.routes import usuario
 from app.routes import clientes
 from app.routes import productos
 from app.routes import pedido
+from app.routes import estado
 from app.routes import marca_producto
 from app.routes import tipo_documento
 from app.routes import entradas_salidas
 from app.routes import detalle_pedido
 from app.routes import inventarios
 from app.routes import ubicacion
+from app.routes import historial_movimientos
 
 # Crear aplicación
 app = FastAPI(
@@ -41,6 +43,8 @@ app.include_router(pedido.router)
 app.include_router(detalle_pedido.router)
 app.include_router(inventarios.router)
 app.include_router(ubicacion.router)
+app.include_router(historial_movimientos.router)
+app.include_router(estado.router)
 
 
 @app.get("/")

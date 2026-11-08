@@ -29,3 +29,4 @@ def obtener_estadisticas_productos(db: Session):
         "Stock_Bajo" : productos_sin_stock,
         "Agotados" : agotados
     }
+

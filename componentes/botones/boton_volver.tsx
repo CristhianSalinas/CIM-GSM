@@ -6,7 +6,10 @@ export default function BotonVolver() {
 
   return (
     <Pressable
-      style={styles.boton}
+      style={({ pressed }) => [
+        styles.boton,
+        pressed && styles.botonPresionado 
+      ]}
       onPress={() => router.back()}
     >
       <Text style={styles.texto}>← Volver</Text>
@@ -16,17 +19,29 @@ export default function BotonVolver() {
 
 const styles = StyleSheet.create({
   boton: {
-    paddingVertical: 10,
-    paddingHorizontal: 5,
     backgroundColor: '#c48703',
-    marginBottom: 20,
+    paddingVertical: 10,
+    paddingHorizontal: 16, 
     borderRadius: 8,
-    width:'30%',
-    alignItems:'center',
-    elevation:3,
-  },
+    marginBottom: 20,
+    alignSelf: 'flex-start',
+    alignItems: 'center',
+    justifyContent: 'center',
+  
+    elevation: 3,
 
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+  },
+  botonPresionado: {
+    opacity: 0.8,
+    transform: [{ scale: 0.98 }], 
+  },
   texto: {
+    color: '#ffffff',
     fontSize: 16,
+    fontWeight: '600',
   },
 });
