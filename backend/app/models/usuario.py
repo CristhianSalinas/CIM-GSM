@@ -3,7 +3,7 @@ from app.config.database import Base
 
 
 class Usuario(Base):
-    __tablename__ = "Usuario"
+    __tablename__ = "usuario"
 
     id_usuario = Column(Integer, primary_key=True, index=True)
     id_tipo_documento = Column(Integer, ForeignKey("tipo_documento.id_tipo"), nullable=False)  

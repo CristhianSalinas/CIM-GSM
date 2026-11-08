@@ -25,13 +25,12 @@ Base = declarative_base()
 
 
 # verificar conexion
-"""if __name__ == "__main__":
+if __name__ == "__main__":
     try:
         with engine.connect() as conexion:
             print("¡Conexión con MySQL exitosa!")
     except Exception as e:
         print("Error de conexión:", e)
-"""
 
 def get_db():
 	"""Proporciona una sesión de base de datos y la cierra al terminar."""
