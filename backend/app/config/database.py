@@ -20,6 +20,7 @@ DATABASE_URL = URL.create(
 )
 
 engine = create_engine(DATABASE_URL, pool_pre_ping=True)
+print(f"MYSQL CONECTADO: {DATABASE_URL.host}:{DATABASE_URL.port}/{DATABASE_URL.database}")
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
