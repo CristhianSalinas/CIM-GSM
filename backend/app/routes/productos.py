@@ -12,6 +12,7 @@ router = APIRouter(
 )
 
 
+@router.get("", response_model=list[ProductoRespuesta])
 @router.get("/", response_model=list[ProductoRespuesta])
 def listar_productos(db: Session = Depends(get_db)):
     return obtener_productos(db)
