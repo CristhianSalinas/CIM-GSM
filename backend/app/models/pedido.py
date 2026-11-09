@@ -10,7 +10,7 @@ class Pedido(Base):
     numero_pedido = Column(Integer, unique=True, nullable=False)
     id_cliente = Column(
         Integer,
-        ForeignKey("Cliente.id_cliente"),
+        ForeignKey("cliente.id_cliente"),
         nullable=False
     )
     fecha = Column(DateTime, server_default=func.now(), nullable=False)

@@ -9,7 +9,7 @@ class Producto(Base):
 
     codigo_sm = Column(String(20), unique=True, nullable=False)
 
-    nombre = Column("Nombre", String(100), nullable=False)
+    nombre = Column("nombre", String(100), nullable=False)
 
     id_marca = Column(
         Integer,
@@ -21,4 +21,4 @@ class Producto(Base):
     referencia = Column(String(45))
     peso = Column(Float)
     precio = Column(Integer)
-    cantidad_fisica = Column("Cantidad_fisica", Integer, default=0)
+    cantidad_fisica = Column("cantidad_fisica", Integer, default=0)
