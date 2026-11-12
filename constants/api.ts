@@ -2,15 +2,18 @@
 import { Platform } from 'react-native';
 import Constants from 'expo-constants';
 
-// Si existe una URL de producción, tiene prioridad.
 const API_PUBLICA = 'https://cim-gsm-production.up.railway.app';
 
 function obtenerAPI_URL() {
-  /*if (API_PUBLICA) {
+  // En producción utiliza Railway.
+  if (
+    typeof window !== 'undefined' &&
+    window.location.hostname.includes('railway.app')
+  ) {
     return API_PUBLICA;
-  }*/
+  }
 
-  // WEB: utiliza el mismo servidor donde se abre CIM.
+  // WEB local.
   if (Platform.OS === 'web') {
     const host =
       typeof window !== 'undefined'
@@ -20,7 +23,7 @@ function obtenerAPI_URL() {
     return `http://${host}:8000`;
   }
 
-  // ANDROID: detecta la IP del computador desde Expo Go.
+  // ANDROID local con Expo Go.
   const hostExpo = Constants.expoConfig?.hostUri;
   const ipComputador = hostExpo?.split(':')[0];
 
@@ -34,6 +37,3 @@ function obtenerAPI_URL() {
 }
 
 export const API_URL = obtenerAPI_URL();
-
-
-
