@@ -1,3 +1,4 @@
+
 from sqlalchemy import Column, Integer, String, Float, ForeignKey
 from app.config.database import Base
 
@@ -7,9 +8,9 @@ class Producto(Base):
 
     id_producto = Column(Integer, primary_key=True, index=True)
 
-    codigo_sm = Column(String(20), unique=True, nullable=False)
+    codigo_sm = Column(String(20), unique=True, nullable=True)
 
-    nombre = Column("nombre", String(100), nullable=False)
+    nombre = Column("Nombre", String(100), nullable=True)
 
     id_marca = Column(
         Integer,
@@ -17,8 +18,20 @@ class Producto(Base):
         nullable=True
     )
 
-    descripcion = Column(String(255))
-    referencia = Column(String(45))
-    peso = Column(Float)
-    precio = Column(Integer)
-    cantidad_fisica = Column("cantidad_fisica", Integer, default=0)
+    descripcion = Column(String(255), nullable=True)
+
+    referencia = Column(String(45), nullable=True)
+
+    peso = Column(Float, nullable=True)
+
+    precio = Column(Integer, nullable=True)
+
+    cantidad_fisica = Column(
+        "Cantidad_fisica",
+        Integer,
+        nullable=True
+    )
+
+    id_ubicacion = Column(Integer, nullable=True)
+
+    id_categoria = Column(Integer, nullable=True)

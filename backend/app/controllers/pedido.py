@@ -4,7 +4,7 @@ from app.models.cliente import Cliente
 from app.models.detalle_pedido import DetallePedido
 from app.models.producto import Producto
 from sqlalchemy import func
-from app.   schemas.pedido import PedidoConProductosCrear
+from app.schemas.pedido import PedidoConProductosCrear
 
 
 def obtener_pedidos(db: Session):

@@ -1,18 +1,14 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.routes import usuario
-from app.routes import clientes
-from app.routes import productos
-from app.routes import pedido
-from app.routes import estado
-from app.routes import marca_producto
-from app.routes import tipo_documento
-from app.routes import entradas_salidas
-from app.routes import detalle_pedido
-from app.routes import inventarios
-from app.routes import ubicacion
-from app.routes import historial_movimientos
+
+from app.models import usuario, rol, producto, cliente, detalle_inventario
+
+from app.routes import usuario, clientes, productos, pedido, estado, marca_producto, tipo_documento
+from app.routes import entradas_salidas, detalle_pedido, inventarios, ubicacion, historial_movimientos
+from app.routes import auth, register, rol, detalle_inventario
+
+
 
 # Crear aplicación
 app = FastAPI(
@@ -22,9 +18,13 @@ app = FastAPI(
 )
 
 
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
+         "http://localhost:8081",
+        "http://127.0.0.1:8081",
+        "http://localhost:3000",
         "https://cimweb-production.up.railway.app",
         "https://cim-gsm-production.up.railway.app",
     ],
@@ -46,6 +46,11 @@ app.include_router(inventarios.router)
 app.include_router(ubicacion.router)
 app.include_router(historial_movimientos.router)
 app.include_router(estado.router)
+app.include_router(auth.router)
+app.include_router(register.router)
+app.include_router(rol.router)
+app.include_router(detalle_inventario.router)
+
 
 
 @app.get("/")
