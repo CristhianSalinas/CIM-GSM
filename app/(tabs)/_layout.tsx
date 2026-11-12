@@ -10,14 +10,11 @@ export default function TabsLayout() {
       />
       
       <Tabs.Screen
-        name="conteo_fisico"
-        options={{ title: 'Conteo físico' }}
-      />
-
-      <Tabs.Screen
-        name="entradas_salidas_movimientos"
+        name="movimientos"
         options={{ title: 'Movimientos' }}
       />
     </Tabs>
+
+    
   );
 }

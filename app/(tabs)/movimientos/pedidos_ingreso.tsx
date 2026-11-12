@@ -6,8 +6,8 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 
-import BotonVolver from '../../componentes/botones/boton_volver';
-import { API_URL } from '../../constants/api';
+import BotonVolver from '../../../componentes/botones/boton_volver';
+import { API_URL } from '../../../constants/api';
 
 interface Pedido {
   id_pedido: number;

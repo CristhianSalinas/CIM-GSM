@@ -1,12 +1,14 @@
 import {
     View,
     Text,
+    Alert,
     StyleSheet,
     ScrollView,
     Pressable,
     Image,
     Platform,
-    useWindowDimensions
+    useWindowDimensions,
+    TouchableOpacity
 } from 'react-native';
 
 import {
@@ -14,7 +16,9 @@ import {
     SafeAreaProvider
 } from 'react-native-safe-area-context';
 
-import { useRouter } from 'expo-router';
+import { useEffect, useState, useCallback  } from 'react';
+import { obtenerToken, obtenerUsuario, eliminarToken } from '../constants/auth';
+import { useRouter, useFocusEffect} from 'expo-router';
 
 export default function Index() {
 
@@ -22,9 +26,65 @@ export default function Index() {
 
     const { width } = useWindowDimensions();
 
+    const [usuarioActual, setUsuarioActual] = useState<any>(null);
+    const [sesionActiva, setSesionActiva] = useState(false);    
+
     const esWeb = Platform.OS === 'web';
     const esPantallaGrande = esWeb && width >= 768;
 
+    useFocusEffect(
+        useCallback(() => {
+            const cargarUsuario = async () => {
+                try {
+                    const token = await obtenerToken();
+                    const usuario = await obtenerUsuario();
+
+                    console.log('TOKEN:', !!token);
+                    console.log('PERFIL:', usuario);
+
+                    setSesionActiva(!!token);
+                    setUsuarioActual(usuario);
+
+                } catch (error) {
+                    console.log('Error cargando perfil:', error);
+                    setSesionActiva(false);
+                    setUsuarioActual(null);
+                }
+            };
+
+            cargarUsuario();
+        }, [])
+    );
+
+
+    const [menuVisible, setMenuVisible] = useState(false);
+
+        const cerrarSesion = async () => {
+            try {
+                await eliminarToken();
+
+                setMenuVisible(false);
+                setSesionActiva(false);
+                setUsuarioActual(null);
+
+                router.replace('/login');
+
+            } catch (error) {
+                console.error('Error al cerrar sesión:', error);
+                Alert.alert('Error', 'No fue posible cerrar la sesión.');
+            }
+        };
+
+        const abrirAjustes = () => {
+            setMenuVisible(false);
+            router.push('/ajustes');
+        };
+
+        const crearUsuario = () => {
+            setMenuVisible(false);
+            router.push('/register');
+        };
+    
     return (
 
         <SafeAreaProvider>
@@ -79,58 +139,118 @@ export default function Index() {
 
                         </View>
 
-                        {/* PERFIL Y ACTIVIDADES */}
 
                         <View style={[
                             styles.cards,
+                            styles.profileCardsRow,
                             !esPantallaGrande && styles.cardsMobile
                         ]}>
+                            
+                        <View style={[
+                            styles.profileCard,
+                            !esPantallaGrande && styles.profileCardMobile
+                        ]}>
 
-                            {/* PERFIL */}
+                            <Image
+                                style={styles.profileImage}
+                                source={require('../img/profile.png')}
+                            />
 
-                            <View style={[
-                                styles.profileCard,
-                                !esPantallaGrande && styles.profileCardMobile
-                            ]}>
+                            <View style={styles.profileInfo}>
 
-                                <Image
-                                    style={styles.profileImage}
-                                    source={require('../img/profile.png')}
-                                />
+                                <Text style={styles.profileLabel}>
+                                    {sesionActiva ? 'SESIÓN ACTIVA' : 'SESIÓN INACTIVA'}
+                                </Text>
 
-                                <View style={styles.profileInfo}>
+                                <Text style={styles.profileName}>
+                                    {usuarioActual?.usuario || 'Usuario no identificado'}
+                                </Text>
 
-                                    <Text style={styles.profileLabel}>
-                                        SESIÓN ACTIVA
-                                    </Text>
-
-                                    <Text style={styles.profileName}>
-                                        Cristhian Salinas
-                                    </Text>
-
-                                    <Text style={styles.profileRole}>
-                                        Encargado de inventarios
-                                    </Text>
-
-                                </View>
-
-                                <View style={styles.profileIndicator}>
-                                    <View style={styles.statusDot} />
-                                </View>
+                                <Text style={styles.profileRole}>
+                                    {usuarioActual
+                                        ? `ID de rol: ${usuarioActual.id_rol}`
+                                        : 'Sin sesión iniciada'}
+                                </Text>
 
                             </View>
+
+                            <View style={styles.profileIndicator}>
+                                <View style={[
+                                    styles.statusDot,
+                                    {
+                                        backgroundColor: sesionActiva
+                                            ? '#22C55E'
+                                            : '#EF4444'
+                                    }
+                                ]} />
+                            </View>
+
+                            {/* MENÚ DESPLEGABLE */}
+                            <View style={styles.profileMenuContainer}>
+
+                                <TouchableOpacity
+                                    style={styles.menuButton}
+                                    onPress={() => setMenuVisible(!menuVisible)}
+                                    activeOpacity={0.7}
+                                >
+                                    <Text style={styles.menuButtonText}>⋮</Text>
+                                </TouchableOpacity>
+
+                                {menuVisible && (
+                                    <View style={styles.dropdownMenu}>
+
+                                        <TouchableOpacity
+                                            style={styles.dropdownOption}
+                                            onPress={cerrarSesion}
+                                        >
+                                            <Text style={styles.dropdownIcon}>↪</Text>
+                                            <Text style={styles.dropdownText}>
+                                                Cerrar sesión
+                                            </Text>
+                                        </TouchableOpacity>
+
+                                        {/*<TouchableOpacity
+                                            style={styles.dropdownOption}
+                                            onPress={abrirAjustes}
+                                        >
+                                            
+                                        <Text style={styles.dropdownIcon}>⚙</Text>
+                                            <Text style={styles.dropdownText}>
+                                                Ajustes
+                                            </Text>
+                                        </TouchableOpacity>*/}
+
+                                        <TouchableOpacity
+                                            style={styles.dropdownOption}
+                                            onPress={crearUsuario}
+                                        >
+                                            <Text style={styles.dropdownIcon}>＋</Text>
+                                            <Text style={styles.dropdownText}>
+                                                Crear usuario
+                                            </Text>
+                                        </TouchableOpacity>
+
+                                    </View>
+                                )}
+
+                            </View>
+
+                        </View>
+
 
                             </View>
                             
                             <View style={[
-                            styles.cards,
-                            !esPantallaGrande && styles.cardsMobile
-                        ]}>
+                                styles.cards,
+                                styles.activityCardsRow,
+                                !esPantallaGrande && styles.cardsMobile
+                            ]}>
                             {/* ACTIVIDADES */}
 
                             <View style={[
-                                styles.activityCard,
-                                !esPantallaGrande && styles.activityCardMobile
+                                styles.cards,
+                                styles.activityCardsRow,
+                                !esPantallaGrande && styles.cardsMobile
                             ]}>
 
                                 <View style={styles.activityTop}>
@@ -190,7 +310,7 @@ export default function Index() {
                                         esPantallaGrande && styles.moduleCardWeb,
                                         pressed && styles.modulePressed
                                     ]}
-                                    onPress={() => router.push('/inventario')}
+                                    onPress={() => router.push('/(tabs)/inventario')}
                                 >
 
                                     <View style={styles.moduleImageContainer}>
@@ -245,7 +365,7 @@ export default function Index() {
                                         esPantallaGrande && styles.moduleCardWeb,
                                         pressed && styles.modulePressed
                                     ]}
-                                    onPress={() => router.push('/movimientos')}
+                                    onPress={() => router.push('/(tabs)/movimientos')}
                                 >
 
                                     <View style={styles.moduleImageContainer}>
@@ -330,33 +450,38 @@ export default function Index() {
 // ESTILOS RESPONSIVE CIM
 // ==========================================
 
+
 const styles = StyleSheet.create({
 
+    // ==========================================
     // GENERAL
+    // ==========================================
 
     safeArea: {
         flex: 1,
-        backgroundColor: '#F3F5F9'
+        backgroundColor: '#F3F5F9',
     },
 
     scrollContent: {
         flexGrow: 1,
-        paddingBottom: 30
+        paddingBottom: 30,
     },
 
     container: {
         flex: 1,
         width: '100%',
         paddingHorizontal: 18,
-        alignSelf: 'center'
+        alignSelf: 'center',
     },
 
     containerWeb: {
         maxWidth: 1250,
-        paddingHorizontal: 32
+        paddingHorizontal: 32,
     },
 
+    // ==========================================
     // ENCABEZADO
+    // ==========================================
 
     header: {
         flexDirection: 'row',
@@ -364,20 +489,20 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         paddingVertical: 18,
         borderBottomWidth: 1,
-        borderBottomColor: '#E2E8F0'
+        borderBottomColor: '#E2E8F0',
     },
 
     systemName: {
         fontSize: 24,
         fontWeight: '900',
         color: '#1E3A8A',
-        letterSpacing: 1
+        letterSpacing: 1,
     },
 
     systemDescription: {
         fontSize: 10,
         color: '#8490A3',
-        marginTop: 3
+        marginTop: 3,
     },
 
     statusSystem: {
@@ -387,34 +512,36 @@ const styles = StyleSheet.create({
         backgroundColor: '#F0FDF4',
         paddingHorizontal: 11,
         paddingVertical: 8,
-        borderRadius: 7
+        borderRadius: 7,
     },
 
     statusDot: {
         width: 7,
         height: 7,
         borderRadius: 10,
-        backgroundColor: '#16A34A'
+        backgroundColor: '#16A34A',
     },
 
     statusText: {
         fontSize: 10,
         fontWeight: '700',
-        color: '#15803D'
+        color: '#15803D',
     },
 
+    // ==========================================
     // BIENVENIDA
+    // ==========================================
 
     welcome: {
         marginTop: 32,
-        marginBottom: 24
+        marginBottom: 24,
     },
 
     welcomeTitle: {
         fontSize: 30,
         fontWeight: '800',
         color: '#172033',
-        letterSpacing: -0.7
+        letterSpacing: -0.7,
     },
 
     welcomeSubtitle: {
@@ -422,20 +549,41 @@ const styles = StyleSheet.create({
         color: '#778196',
         marginTop: 7,
         lineHeight: 20,
-        maxWidth: 550
+        maxWidth: 550,
     },
 
-    // TARJETAS SUPERIORES
+    // ==========================================
+    // CONTENEDORES DE TARJETAS
+    // ==========================================
 
     cards: {
         flexDirection: 'row',
         gap: 16,
-        marginBottom: 38
+        marginBottom: 38,
     },
 
     cardsMobile: {
-        gap: 10
+        gap: 10,
     },
+
+    // La fila del perfil queda por encima
+    // de la fila de actividades.
+
+    profileCardsRow: {
+        position: 'relative',
+        zIndex: 20,
+        elevation: 20,
+    },
+
+    activityCardsRow: {
+        position: 'relative',
+        zIndex: 1,
+        elevation: 1,
+    },
+
+    // ==========================================
+    // TARJETA DE PERFIL
+    // ==========================================
 
     profileCard: {
         flex: 2,
@@ -447,12 +595,14 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         gap: 16,
-        elevation: 1
+        position: 'relative',
+        zIndex: 100,
+        elevation: 10,
     },
 
     profileCardMobile: {
         padding: 12,
-        gap: 10
+        gap: 10,
     },
 
     profileImage: {
@@ -460,11 +610,11 @@ const styles = StyleSheet.create({
         height: 75,
         borderRadius: 40,
         borderWidth: 2,
-        borderColor: '#E2E8F0'
+        borderColor: '#E2E8F0',
     },
 
     profileInfo: {
-        flex: 1
+        flex: 1,
     },
 
     profileLabel: {
@@ -472,19 +622,19 @@ const styles = StyleSheet.create({
         fontWeight: '800',
         color: '#94A3B8',
         letterSpacing: 0.7,
-        marginBottom: 6
+        marginBottom: 6,
     },
 
     profileName: {
         fontSize: 16,
         fontWeight: '800',
-        color: '#172033'
+        color: '#172033',
     },
 
     profileRole: {
         fontSize: 11,
         color: '#8490A3',
-        marginTop: 5
+        marginTop: 5,
     },
 
     profileIndicator: {
@@ -493,10 +643,74 @@ const styles = StyleSheet.create({
         borderRadius: 10,
         backgroundColor: '#DCFCE7',
         justifyContent: 'center',
-        alignItems: 'center'
+        alignItems: 'center',
     },
 
-    // ACTIVIDADES
+    // ==========================================
+    // MENÚ DESPLEGABLE DE USUARIO
+    // ==========================================
+
+    profileMenuContainer: {
+        position: 'relative',
+        zIndex: 200,
+        elevation: 20,
+    },
+
+    menuButton: {
+        width: 32,
+        height: 38,
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderRadius: 8,
+    },
+
+    menuButtonText: {
+        fontSize: 27,
+        fontWeight: 'bold',
+        color: '#1D3557',
+    },
+
+    dropdownMenu: {
+        position: 'absolute',
+        top: 42,
+        right: 0,
+        width: 175,
+        backgroundColor: '#FFFFFF',
+        borderRadius: 10,
+        paddingVertical: 6,
+        zIndex: 300,
+        elevation: 25,
+        shadowColor: '#000',
+        shadowOpacity: 0.15,
+        shadowRadius: 8,
+        shadowOffset: {
+            width: 0,
+            height: 3,
+        },
+    },
+
+    dropdownOption: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingVertical: 12,
+        paddingHorizontal: 13,
+    },
+
+    dropdownIcon: {
+        fontSize: 17,
+        color: '#1D3557',
+        width: 28,
+    },
+
+    dropdownText: {
+        fontSize: 13,
+        color: '#333333',
+        fontWeight: '500',
+    },
+
+    // ==========================================
+    // ACTIVIDADES PENDIENTES
+    // ==========================================
 
     activityCard: {
         flex: 1,
@@ -506,24 +720,24 @@ const styles = StyleSheet.create({
         borderColor: '#E5E9F0',
         borderRadius: 12,
         padding: 20,
-        elevation: 1
+        elevation: 1,
     },
 
     activityCardMobile: {
-        padding: 12
+        padding: 12,
     },
 
     activityTop: {
         flexDirection: 'row',
         justifyContent: 'space-between',
-        alignItems: 'center'
+        alignItems: 'center',
     },
 
     activityLabel: {
         fontSize: 9,
         color: '#8490A3',
         fontWeight: '800',
-        flex: 1
+        flex: 1,
     },
 
     activityIcon: {
@@ -532,58 +746,60 @@ const styles = StyleSheet.create({
         borderRadius: 6,
         backgroundColor: '#FFF7ED',
         justifyContent: 'center',
-        alignItems: 'center'
+        alignItems: 'center',
     },
 
     activityIconText: {
         color: '#D97706',
         fontSize: 15,
-        fontWeight: '800'
+        fontWeight: '800',
     },
 
     activityNumber: {
         fontSize: 34,
         color: '#1E3A8A',
         fontWeight: '800',
-        marginTop: 12
+        marginTop: 12,
     },
 
     activityDescription: {
         fontSize: 10,
         color: '#94A3B8',
-        marginTop: 3
+        marginTop: 3,
     },
 
+    // ==========================================
     // MÓDULOS
+    // ==========================================
 
     modulesSection: {
-        marginBottom: 35
+        marginBottom: 35,
     },
 
     sectionHeader: {
-        marginBottom: 18
+        marginBottom: 18,
     },
 
     sectionTitle: {
         fontSize: 20,
         fontWeight: '800',
-        color: '#172033'
+        color: '#172033',
     },
 
     sectionSubtitle: {
         fontSize: 12,
         color: '#8490A3',
-        marginTop: 5
+        marginTop: 5,
     },
 
     modulesGrid: {
         flexDirection: 'column',
-        gap: 18
+        gap: 18,
     },
 
     modulesGridWeb: {
         flexDirection: 'row',
-        alignItems: 'stretch'
+        alignItems: 'stretch',
     },
 
     moduleCard: {
@@ -592,28 +808,28 @@ const styles = StyleSheet.create({
         borderColor: '#E5E9F0',
         borderRadius: 12,
         overflow: 'hidden',
-        elevation: 2
+        elevation: 2,
     },
 
     moduleCardWeb: {
-        flex: 1
+        flex: 1,
     },
 
     modulePressed: {
         opacity: 0.85,
-        transform: [{ scale: 0.99 }]
+        transform: [{ scale: 0.99 }],
     },
 
     moduleImageContainer: {
         width: '100%',
         height: 175,
         backgroundColor: '#E2E8F0',
-        position: 'relative'
+        position: 'relative',
     },
 
     moduleImage: {
         width: '100%',
-        height: '100%'
+        height: '100%',
     },
 
     moduleTag: {
@@ -623,14 +839,14 @@ const styles = StyleSheet.create({
         backgroundColor: 'rgba(15, 23, 42, 0.82)',
         paddingHorizontal: 10,
         paddingVertical: 7,
-        borderRadius: 5
+        borderRadius: 5,
     },
 
     moduleTagText: {
         color: '#FFFFFF',
         fontSize: 9,
         fontWeight: '800',
-        letterSpacing: 0.5
+        letterSpacing: 0.5,
     },
 
     moduleContent: {
@@ -638,24 +854,24 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        gap: 12
+        gap: 12,
     },
 
     moduleTextContainer: {
-        flex: 1
+        flex: 1,
     },
 
     moduleTitle: {
         fontSize: 17,
         fontWeight: '800',
-        color: '#172033'
+        color: '#172033',
     },
 
     moduleDescription: {
         fontSize: 11,
         color: '#8490A3',
         lineHeight: 17,
-        marginTop: 6
+        marginTop: 6,
     },
 
     moduleAction: {
@@ -665,47 +881,49 @@ const styles = StyleSheet.create({
         backgroundColor: '#EFF4FF',
         paddingHorizontal: 12,
         paddingVertical: 10,
-        borderRadius: 7
+        borderRadius: 7,
     },
 
     moduleActionText: {
         fontSize: 11,
         color: '#1E40AF',
-        fontWeight: '800'
+        fontWeight: '800',
     },
 
     moduleArrow: {
         fontSize: 15,
         color: '#1E40AF',
-        fontWeight: '800'
+        fontWeight: '800',
     },
 
+    // ==========================================
     // PIE DE PÁGINA
+    // ==========================================
 
     footer: {
         borderTopWidth: 1,
         borderTopColor: '#E2E8F0',
         paddingTop: 18,
-        alignItems: 'center'
+        alignItems: 'center',
     },
 
     footerTitle: {
         fontSize: 13,
         fontWeight: '900',
         color: '#1E3A8A',
-        letterSpacing: 1
+        letterSpacing: 1,
     },
 
     footerText: {
         fontSize: 10,
         color: '#8490A3',
-        marginTop: 5
+        marginTop: 5,
     },
 
     footerVersion: {
         fontSize: 9,
         color: '#B0B8C5',
-        marginTop: 5
-    }
+        marginTop: 5,
+    },
 
 });

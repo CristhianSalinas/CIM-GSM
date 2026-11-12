@@ -15,7 +15,8 @@
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
-      }
+      },
+      "package": "com.d4rk_gh0st.cimgsmbogota"
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -23,6 +24,16 @@
     "plugins": [
       "expo-router",
       "expo-status-bar"
-    ]
+    ],
+    "extra": {
+      "router": {
+        "asyncRoutes": {
+          "web": true
+        }
+      },
+      "eas": {
+        "projectId": "4f14a807-36d5-4546-aceb-027b9c49c7e1"
+      }
+    }
   }
 }

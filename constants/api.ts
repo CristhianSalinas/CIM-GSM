@@ -3,12 +3,12 @@ import { Platform } from 'react-native';
 import Constants from 'expo-constants';
 
 // Si existe una URL de producción, tiene prioridad.
-const API_PUBLICA = 'https://cim-gsm-production.up.railway.app';
+//const API_PUBLICA = 'https://cim-gsm-production.up.railway.app';
 
 function obtenerAPI_URL() {
-  if (API_PUBLICA) {
+  /*if (API_PUBLICA) {
     return API_PUBLICA;
-  }
+  }*/
 
   // WEB: utiliza el mismo servidor donde se abre CIM.
   if (Platform.OS === 'web') {

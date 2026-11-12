@@ -10,7 +10,7 @@ import {
 import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { useRouter } from 'expo-router';
-import BotonInicio from '../../componentes/botones/boton_inicio';
+import BotonInicio from '../../../componentes/botones/boton_inicio';
 
 export default function Index() {
   const router = useRouter();

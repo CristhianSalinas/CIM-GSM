@@ -6,10 +6,10 @@ import { DataTable } from 'react-native-paper';
 
 
 
-import BotonInicio from '../../componentes/botones/boton_inicio';
-import CustomModal from '../../componentes/botones/ScreenModal';
-import BotonVolver from '../../componentes/botones/boton_volver';
-import { API_URL } from '../../constants/api';
+import BotonInicio from '../../../componentes/botones/boton_inicio';
+import CustomModal from '../../../componentes/botones/ScreenModal';
+import BotonVolver from '../../../componentes/botones/boton_volver';
+import { API_URL } from '../../../constants/api';
 
 
 

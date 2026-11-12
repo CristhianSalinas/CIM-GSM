@@ -4,10 +4,10 @@ import { useLocalSearchParams } from 'expo-router';
 import { DataTable } from 'react-native-paper';
 import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
 
-import CustomModal from '../../componentes/botones/ScreenModal';
-import BotonVolver from '../../componentes/botones/boton_volver';
-import { API_URL } from '../../constants/api';
-import { Producto } from '../../types/Producto';
+import CustomModal from '../../../componentes/botones/ScreenModal';
+import BotonVolver from '../../../componentes/botones/boton_volver';
+import { API_URL } from '../../../constants/api';
+import { Producto } from '../../../types/Producto';
 
 
 export default function Salida() {

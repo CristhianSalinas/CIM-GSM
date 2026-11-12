@@ -10,10 +10,21 @@ import {
     Platform
 } from 'react-native';
 
+
+
+
+import { router } from 'expo-router';
+import { eliminarToken } from '../../../constants/auth';
 import { useEffect, useState } from 'react';
-import BotonInicio from '../../componentes/botones/boton_inicio';
+import BotonInicio from '../../../componentes/botones/boton_inicio';
 import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
-import { API_URL } from '../../constants/api';
+import { API_URL } from '../../../constants/api';
+import { obtenerToken } from '../../../constants/auth';
+
+const cerrarSesion = async () => {
+    await eliminarToken();
+    router.replace('/login');
+};
 
 interface Producto {
     id_producto: number;
@@ -60,9 +71,25 @@ export default function Conteo() {
         useState<'todos' | 'bajo' | 'agotados'>('todos');
 
     // CARGAR PRODUCTOS
+
+   
+    // CARGAR PRODUCTOS
     const cargarProductos = async () => {
         try {
-            const respuesta = await fetch(`${API_URL}/api/productos`);
+            const token = await obtenerToken();
+
+            if (!token) {
+                throw new Error('No hay sesión activa. Inicia sesión nuevamente.');
+                
+            }
+
+            const respuesta = await fetch(`${API_URL}/api/productos/`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`,
+                },
+            });
 
             if (!respuesta.ok) {
                 throw new Error(`Error HTTP: ${respuesta.status}`);
@@ -71,30 +98,41 @@ export default function Conteo() {
             const datos = await respuesta.json();
             setProductos(datos);
 
-
         } catch (error) {
-            console.log("Error al cargar productos:", error);
+            console.log('Error al cargar productos:', error);
         }
     };
 
-    // CARGAR ESTADÍSTICAS
     const cargarEstadisticas = async () => {
-        try {
-            const respuesta = await fetch(
-                `${API_URL}/api/productos/estadisticas`
-            );
+    try {
+        const token = await obtenerToken();
 
-            if (!respuesta.ok) {
-                throw new Error(`Error HTTP: ${respuesta.status}`);
-            }
-
-            const datos = await respuesta.json();
-            setEstadisticas(datos);
-
-        } catch (error) {
-            console.log("Error al cargar estadísticas:", error);
+        if (!token) {
+            throw new Error('No hay token de autenticación.');
         }
-    };
+
+        const respuesta = await fetch(
+            `${API_URL}/api/productos/estadisticas`,
+            {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`,
+                },
+            }
+        );
+
+        if (!respuesta.ok) {
+            throw new Error(`Error HTTP: ${respuesta.status}`);
+        }
+
+        const datos = await respuesta.json();
+        setEstadisticas(datos);
+
+    } catch (error) {
+        console.log('Error al cargar estadísticas:', error);
+    }
+};
 
     // REGISTRAR CONTEO
     const enviarInventario = async () => {
@@ -114,12 +152,20 @@ export default function Conteo() {
         }
 
         try {
+
+            const token = await obtenerToken();
+
+            if (!token) {
+                throw new Error('No hay token de autenticación.');
+            }
+
             const respuesta = await fetch(
                 `${API_URL}/api/inventarios/enviar`,
                 {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json'
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`,
                     },
                     body: JSON.stringify({
                         id_usuario: 1,
@@ -146,7 +192,7 @@ export default function Conteo() {
 
             alert('Inventario registrado correctamente.');
 
-            await cargarProductos();
+           
 
         } catch (error) {
             console.log('Error al registrar inventario:', error);
