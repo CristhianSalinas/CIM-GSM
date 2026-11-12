@@ -7,7 +7,8 @@ import {
     TouchableOpacity,
     Modal,
     useWindowDimensions,
-    Platform
+    Platform,
+    Pressable
 } from 'react-native';
 
 
@@ -25,6 +26,10 @@ const cerrarSesion = async () => {
     await eliminarToken();
     router.replace('/login');
 };
+
+const inventarios = () => {
+    router.push('/inventario/inventarios');
+  };
 
 interface Producto {
     id_producto: number;
@@ -302,6 +307,16 @@ export default function Conteo() {
 
                             <View style={styles.navegacion}>
                                 <BotonInicio />
+
+                                <Pressable
+                                    style={({ pressed }) => [
+                                        styles.botonCrear,
+                                        pressed && { opacity: 0.8 }
+                                    ]}
+                                    onPress={inventarios}
+                                    >
+                                    <Text style={styles.botonCrearTexto}> inventarios</Text>
+                                    </Pressable>
                             </View>
 
                             {/* ENCABEZADO */}
@@ -525,19 +540,15 @@ export default function Conteo() {
 
                                     return (
 
-                                        <TouchableOpacity
+                                        <View
                                             key={item.id_producto}
                                             style={[
                                                 styles.product,
                                                 esPantallaGrande && styles.productWeb
                                             ]}
-                                            activeOpacity={0.7}
-                                            onPress={() => {
-                                                setProductoSeleccionado(item);
-                                                setNuevoConteo(
-                                                    String(item.cantidad_fisica ?? 0)
-                                                );
-                                            }}
+                                           
+                                            
+                                            
                                         >
 
                                             <View style={[
@@ -613,7 +624,7 @@ export default function Conteo() {
 
                                             </View>
 
-                                        </TouchableOpacity>
+                                        </View>
 
                                     );
 
@@ -867,6 +878,25 @@ const styles = StyleSheet.create({
     cardsMovil: {
         gap: 8
     },
+
+    botonCrear: {
+    backgroundColor: '#C48703',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 10,
+    alignSelf: 'flex-end',
+    marginBottom: 10,
+    shadowColor: '#C48703',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  botonCrearTexto: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '700',
+  },
 
     card: {
         flex: 1,
