@@ -1,6 +1,4 @@
-
 import React, { useCallback, useEffect, useState } from 'react';
-
 import {
     View,
     Text,
@@ -40,7 +38,6 @@ export default function Inventarios() {
         id_estado: number | null,
         nombre: string | null
     ): string => {
-
         const estados: Record<number, string> = {
             1: 'Completado',
             2: 'Pendiente',
@@ -54,129 +51,70 @@ export default function Inventarios() {
             : nombre || 'Sin estado';
     };
 
-    // Obtener colores según el estado
-    const obtenerColorEstado = (id_estado: number | null) => {
-
+    // Obtener colores sobrios y modernos según el estado
+    const obtenerConfigEstado = (id_estado: number | null) => {
         switch (id_estado) {
-
             case 1:
-                return {
-                    fondo: '#DCFCE7',
-                    texto: '#166534'
-                };
-
+                return { fondo: '#F0FDF4', texto: '#15803D', borde: '#BBF7D0', indicador: '#22C55E' };
             case 2:
-                return {
-                    fondo: '#FEF3C7',
-                    texto: '#92400E'
-                };
-
+                return { fondo: '#FFFBEB', texto: '#B45309', borde: '#FEF3C7', indicador: '#F59E0B' };
             case 3:
-                return {
-                    fondo: '#DBEAFE',
-                    texto: '#1D4ED8'
-                };
-
+                return { fondo: '#EFF6FF', texto: '#1D4ED8', borde: '#BFDBFE', indicador: '#3B82F6' };
             case 4:
-                return {
-                    fondo: '#F3E8FF',
-                    texto: '#7E22CE'
-                };
-
+                return { fondo: '#FAF5FF', texto: '#7E22CE', borde: '#E9D5FF', indicador: '#A855F7' };
             case 5:
-                return {
-                    fondo: '#FEE2E2',
-                    texto: '#B91C1C'
-                };
-
+                return { fondo: '#FEF2F2', texto: '#B91C1C', borde: '#FECACA', indicador: '#EF4444' };
             default:
-                return {
-                    fondo: '#E2E8F0',
-                    texto: '#475569'
-                };
+                return { fondo: '#F1F5F9', texto: '#475569', borde: '#E2E8F0', indicador: '#94A3B8' };
         }
     };
 
     // Consultar inventarios
     const cargarInventarios = useCallback(async (esActualizacion = false) => {
-
         try {
-
             setError('');
-
-            const respuesta = await fetch(
-                `${API_URL}/api/inventarios/`
-            );
+            const respuesta = await fetch(`${API_URL}/api/inventarios/`);
 
             if (!respuesta.ok) {
-                throw new Error(
-                    `Error del servidor: ${respuesta.status}`
-                );
+                throw new Error(`Error del servidor: ${respuesta.status}`);
             }
 
             const datos: unknown = await respuesta.json();
 
             if (!Array.isArray(datos)) {
-                throw new Error(
-                    'La respuesta del servidor no tiene un formato válido.'
-                );
+                throw new Error('La respuesta del servidor no tiene un formato válido.');
             }
 
             setInventarios(datos as Inventario[]);
-
         } catch (error) {
-
             console.log('Error cargando inventarios:', error);
-
-            const mensaje = error instanceof Error
-                ? error.message
-                : 'No fue posible cargar los inventarios.';
-
+            const mensaje = error instanceof Error ? error.message : 'No fue posible cargar los inventarios.';
             setError(mensaje);
 
             if (esActualizacion) {
-                Alert.alert(
-                    'Error',
-                    'No fue posible actualizar la lista de inventarios.'
-                );
+                Alert.alert('Error', 'No fue posible actualizar la lista de inventarios.');
             }
-
         } finally {
-
             setCargando(false);
             setActualizando(false);
-
         }
-
     }, []);
 
-    // Cargar al abrir la pantalla
     useEffect(() => {
-
         cargarInventarios();
-
     }, [cargarInventarios]);
 
-    // Actualizar lista manualmente
     const actualizar = () => {
-
         setActualizando(true);
         cargarInventarios(true);
-
     };
 
-    // Reintentar consulta
     const reintentar = () => {
-
         setCargando(true);
         cargarInventarios();
-
     };
 
-    // Navegar al detalle del inventario
     const seleccionarInventario = (item: Inventario) => {
-
-        // No permitir modificar inventarios completados
         if (item.id_estado === 1) {
             Alert.alert(
                 'Inventario completado',
@@ -201,96 +139,44 @@ export default function Inventarios() {
                 categoria: item.categoria || 'Sin categoría'
             }
         });
-
     };
 
     return (
-
         <SafeAreaView style={styles.contenedor}>
-
             {/* ENCABEZADO */}
             <View style={styles.encabezado}>
-
                 <BotonVolver />
-
                 <View style={styles.tituloContainer}>
-
-                    <Text style={styles.titulo}>
-                        Inventarios
-                    </Text>
-
-                    <Text style={styles.subtitulo}>
-                        Control de inventarios por categoría
-                    </Text>
-
+                    <Text style={styles.titulo}>Control de Inventarios</Text>
+                    <Text style={styles.subtitulo}>Gestión por categorías</Text>
                 </View>
-
             </View>
 
-            {/* RESUMEN */}
-            <View style={styles.resumen}>
-
-                <View>
-
-                    <Text style={styles.resumenTexto}>
-                        Inventarios registrados
-                    </Text>
-
-                    <Text style={styles.resumenNumero}>
-                        {inventarios.length}
-                    </Text>
-
+            {/* RESUMEN MINIMALISTA */}
+            <View style={styles.resumenCard}>
+                <View style={styles.resumenInfo}>
+                    <Text style={styles.resumenLabel}>TOTAL REGISTROS</Text>
+                    <Text style={styles.resumenNumero}>{inventarios.length}</Text>
                 </View>
-
-                <View style={styles.iconoResumen}>
-
-                    <Text style={styles.iconoTexto}>
-                        INV
-                    </Text>
-
+                <View style={styles.resumenBadge}>
+                    <Text style={styles.resumenBadgeText}>Activo</Text>
                 </View>
-
             </View>
 
             {/* CONTENIDO */}
             {cargando ? (
-
                 <View style={styles.centro}>
-
-                    <ActivityIndicator
-                        size="large"
-                        color="#2563EB"
-                    />
-
-                    <Text style={styles.mensaje}>
-                        Cargando inventarios...
-                    </Text>
-
+                    <ActivityIndicator size="large" color="#0F172A" />
+                    <Text style={styles.mensaje}>Cargando inventarios...</Text>
                 </View>
-
             ) : error && inventarios.length === 0 ? (
-
                 <View style={styles.centro}>
-
-                    <Text style={styles.error}>
-                        {error}
-                    </Text>
-
-                    <Pressable
-                        style={styles.botonReintentar}
-                        onPress={reintentar}
-                    >
-
-                        <Text style={styles.botonTexto}>
-                            Reintentar
-                        </Text>
-
+                    <Text style={styles.error}>{error}</Text>
+                    <Pressable style={styles.botonReintentar} onPress={reintentar}>
+                        <Text style={styles.botonTexto}>Reintentar</Text>
                     </Pressable>
-
                 </View>
-
             ) : (
-
                 <ScrollView
                     showsVerticalScrollIndicator={false}
                     contentContainerStyle={styles.lista}
@@ -298,386 +184,283 @@ export default function Inventarios() {
                         <RefreshControl
                             refreshing={actualizando}
                             onRefresh={actualizar}
-                            colors={['#2563EB']}
+                            colors={['#0F172A']}
+                            tintColor="#0F172A"
                         />
                     }
                 >
-
-                    {/* ERROR DE ACTUALIZACIÓN */}
                     {error !== '' && inventarios.length > 0 && (
-
                         <View style={styles.avisoError}>
-
-                            <Text style={styles.avisoErrorTexto}>
-                                No se pudo actualizar la información.
-                            </Text>
-
+                            <Text style={styles.avisoErrorTexto}>No se pudo actualizar la información en tiempo real.</Text>
                         </View>
-
                     )}
 
-                    {/* LISTA VACÍA */}
                     {inventarios.length === 0 ? (
-
                         <View style={styles.vacio}>
-
-                            <Text style={styles.vacioTitulo}>
-                                No hay inventarios registrados
-                            </Text>
-
-                            <Text style={styles.vacioTexto}>
-                                Los inventarios aparecerán aquí cuando sean creados.
-                            </Text>
-
+                            <Text style={styles.vacioTitulo}>Sin inventarios</Text>
+                            <Text style={styles.vacioTexto}>Los registros aparecerán aquí cuando sean creados.</Text>
                         </View>
-
                     ) : (
-
                         inventarios.map((item) => {
-
-                            const colores = obtenerColorEstado(
-                                item.id_estado
-                            );
-
-                            const nombreEstado = obtenerEstado(
-                                item.id_estado,
-                                item.estado
-                            );
-
+                            const configEstado = obtenerConfigEstado(item.id_estado);
+                            const nombreEstado = obtenerEstado(item.id_estado, item.estado);
                             const completado = item.id_estado === 1;
 
                             return (
-
                                 <Pressable
                                     key={item.id_inventario}
                                     disabled={completado}
                                     onPress={() => seleccionarInventario(item)}
                                     style={({ pressed }) => [
-
                                         styles.tarjeta,
-
-                                        pressed && !completado
-                                            ? styles.tarjetaPresionada
-                                            : null,
-
-                                        completado
-                                            ? styles.tarjetaCompletada
-                                            : null
-
+                                        { borderLeftColor: configEstado.indicador },
+                                        pressed && !completado ? styles.tarjetaPresionada : null,
+                                        completado ? styles.tarjetaCompletada : null
                                     ]}
                                 >
-
-                                    {/* NÚMERO Y ESTADO */}
-                                    <View style={styles.tarjetaSuperior}>
-
-                                        <View>
-
-                                            <Text style={styles.etiqueta}>
-                                                NÚMERO DE INVENTARIO
-                                            </Text>
-
-                                            <Text style={styles.numero}>
-                                                #{item.id_inventario}
-                                            </Text>
-
-                                        </View>
-
-                                        <View
-                                            style={[
-                                                styles.estado,
-                                                {
-                                                    backgroundColor: colores.fondo
-                                                }
-                                            ]}
-                                        >
-
-                                            <Text
-                                                style={[
-                                                    styles.estadoTexto,
-                                                    {
-                                                        color: colores.texto
-                                                    }
-                                                ]}
-                                            >
+                                    <View style={styles.tarjetaHeader}>
+                                        <Text style={styles.idInventario}>INV #{item.id_inventario}</Text>
+                                        <View style={[styles.badgeEstado, { backgroundColor: configEstado.fondo, borderColor: configEstado.borde }]}>
+                                            <View style={[styles.puntoEstado, { backgroundColor: configEstado.indicador }]} />
+                                            <Text style={[styles.textoEstado, { color: configEstado.texto }]}>
                                                 {nombreEstado}
                                             </Text>
-
                                         </View>
-
                                     </View>
 
-                                    <View style={styles.divisor} />
-
-                                    {/* CATEGORÍA */}
-                                    <Text style={styles.etiqueta}>
-                                        CATEGORÍA A INVENTARIAR
-                                    </Text>
-
-                                    <Text style={styles.categoria}>
+                                    <Text style={styles.categoriaNombre}>
                                         {item.categoria || 'Sin categoría'}
                                     </Text>
 
-                                    {/* PIE DE TARJETA */}
-                                    <View style={styles.pieTarjeta}>
-
-                                        <Text
-                                            style={[
-                                                styles.textoSeleccionar,
-                                                completado && styles.textoCompletado
-                                            ]}
-                                        >
-                                            {completado
-                                                ? 'Inventario finalizado'
-                                                : 'Ver productos'
-                                            }
+                                    <View style={styles.tarjetaFooter}>
+                                        <Text style={[styles.textoAccion, completado && styles.textoCompletadoText]}>
+                                            {completado ? 'Finalizado' : 'Gestionar productos'}
                                         </Text>
-
-                                        {!completado && (
-
-                                            <Text style={styles.flecha}>
-                                                →
-                                            </Text>
-
-                                        )}
-
+                                        {!completado && <Text style={styles.flecha}>›</Text>}
                                     </View>
-
                                 </Pressable>
-
                             );
-
                         })
-
                     )}
-
                 </ScrollView>
-
             )}
-
         </SafeAreaView>
-
     );
-
 }
 
 const styles = StyleSheet.create({
-
     contenedor: {
         flex: 1,
-        backgroundColor: '#F3F4F6',
+        backgroundColor: '#F8FAFC',
     },
-
     encabezado: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingHorizontal: 18,
-        paddingVertical: 18,
+        paddingHorizontal: 20,
+        paddingVertical: 16,
         backgroundColor: '#FFFFFF',
-        gap: 15,
+        borderBottomWidth: 1,
+        borderBottomColor: '#E2E8F0',
+        gap: 12,
     },
-
     tituloContainer: {
         flex: 1,
     },
-
     titulo: {
-        fontSize: 23,
-        fontWeight: 'bold',
-        color: '#172554',
+        fontSize: 18,
+        fontWeight: '700',
+        color: '#0F172A',
     },
-
     subtitulo: {
-        fontSize: 13,
+        fontSize: 12,
         color: '#64748B',
-        marginTop: 3,
+        marginTop: 2,
     },
-
-    resumen: {
-        margin: 16,
-        padding: 18,
-        backgroundColor: '#1E3A8A',
-        borderRadius: 12,
+    resumenCard: {
+        marginHorizontal: 16,
+        marginTop: 16,
+        marginBottom: 8,
+        paddingVertical: 12,
+        paddingHorizontal: 16,
+        backgroundColor: '#FFFFFF',
+        borderRadius: 10,
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-    },
-
-    resumenTexto: {
-        color: '#DBEAFE',
-        fontSize: 14,
-    },
-
-    resumenNumero: {
-        color: '#FFFFFF',
-        fontSize: 30,
-        fontWeight: 'bold',
-        marginTop: 5,
-    },
-
-    iconoResumen: {
-        borderWidth: 1,
-        borderColor: '#93C5FD',
-        borderRadius: 10,
-        padding: 12,
-    },
-
-    iconoTexto: {
-        color: '#FFFFFF',
-        fontSize: 18,
-        fontWeight: 'bold',
-    },
-
-    lista: {
-        paddingHorizontal: 16,
-        paddingBottom: 30,
-        gap: 12,
-    },
-
-    tarjeta: {
-        backgroundColor: '#FFFFFF',
-        padding: 18,
-        borderRadius: 12,
         borderWidth: 1,
         borderColor: '#E2E8F0',
-        elevation: 2,
     },
-
+    resumenInfo: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 10,
+    },
+    resumenLabel: {
+        fontSize: 11,
+        fontWeight: '600',
+        color: '#64748B',
+        letterSpacing: 0.5,
+    },
+    resumenNumero: {
+        fontSize: 16,
+        fontWeight: '700',
+        color: '#0F172A',
+    },
+    resumenBadge: {
+        backgroundColor: '#F1F5F9',
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderRadius: 6,
+    },
+    resumenBadgeText: {
+        fontSize: 10,
+        fontWeight: '600',
+        color: '#475569',
+    },
+    lista: {
+        paddingHorizontal: 16,
+        paddingVertical: 8,
+        paddingBottom: 30,
+        gap: 10,
+    },
+    tarjeta: {
+        backgroundColor: '#FFFFFF',
+        padding: 16,
+        borderRadius: 10,
+        borderWidth: 1,
+        borderColor: '#E2E8F0',
+        borderLeftWidth: 4, // Estilo profesional tipo barra lateral de color
+        shadowColor: '#64748B',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.05,
+        shadowRadius: 2,
+        elevation: 1,
+    },
     tarjetaPresionada: {
-        backgroundColor: '#EFF6FF',
-        borderColor: '#93C5FD',
+        backgroundColor: '#F8FAFC',
+        borderColor: '#CBD5E1',
     },
-
     tarjetaCompletada: {
-        opacity: 0.8,
+        opacity: 0.75,
+        backgroundColor: '#FCFCFD',
     },
-
-    tarjetaSuperior: {
+    tarjetaHeader: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
+        marginBottom: 6,
     },
-
-    etiqueta: {
+    idInventario: {
         fontSize: 11,
         fontWeight: '700',
-        color: '#64748B',
-        letterSpacing: 0.7,
+        color: '#94A3B8',
+        letterSpacing: 0.5,
     },
-
-    numero: {
-        fontSize: 23,
-        fontWeight: 'bold',
-        color: '#1E293B',
-        marginTop: 5,
-    },
-
-    estado: {
-        paddingHorizontal: 12,
-        paddingVertical: 7,
-        borderRadius: 20,
-    },
-
-    estadoTexto: {
-        fontSize: 12,
-        fontWeight: 'bold',
-    },
-
-    divisor: {
-        height: 1,
-        backgroundColor: '#E2E8F0',
-        marginVertical: 15,
-    },
-
-    categoria: {
-        fontSize: 17,
-        fontWeight: '600',
-        color: '#334155',
-        marginTop: 7,
-    },
-
-    pieTarjeta: {
+    badgeEstado: {
         flexDirection: 'row',
-        justifyContent: 'flex-end',
         alignItems: 'center',
-        marginTop: 15,
-        gap: 8,
+        paddingHorizontal: 8,
+        paddingVertical: 3,
+        borderRadius: 12,
+        borderWidth: 1,
+        gap: 5,
     },
-
-    textoSeleccionar: {
-        fontSize: 13,
+    puntoEstado: {
+        width: 6,
+        height: 6,
+        borderRadius: 3,
+    },
+    textoEstado: {
+        fontSize: 11,
         fontWeight: '600',
-        color: '#2563EB',
     },
-
-    textoCompletado: {
-        color: '#64748B',
+    categoriaNombre: {
+        fontSize: 15,
+        fontWeight: '600',
+        color: '#1E293B',
+        marginVertical: 4,
     },
-
+    tarjetaFooter: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginTop: 10,
+        paddingTop: 8,
+        borderTopWidth: 1,
+        borderTopColor: '#F1F5F9',
+    },
+    textoAccion: {
+        fontSize: 12,
+        fontWeight: '600',
+        color: '#0284C7',
+    },
+    textoCompletadoText: {
+        color: '#94A3B8',
+    },
     flecha: {
-        fontSize: 19,
-        color: '#2563EB',
+        fontSize: 16,
+        fontWeight: 'bold',
+        color: '#0284C7',
     },
-
     centro: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
         padding: 20,
     },
-
     mensaje: {
         color: '#64748B',
         marginTop: 10,
+        fontSize: 13,
     },
-
     error: {
         color: '#DC2626',
         textAlign: 'center',
+        fontSize: 13,
     },
-
     avisoError: {
-        backgroundColor: '#FEE2E2',
-        padding: 12,
+        backgroundColor: '#FEF2F2',
+        padding: 10,
         borderRadius: 8,
+        borderWidth: 1,
+        borderColor: '#FECACA',
+        marginBottom: 4,
     },
-
     avisoErrorTexto: {
         color: '#B91C1C',
-        fontSize: 13,
+        fontSize: 12,
         textAlign: 'center',
     },
-
     botonReintentar: {
-        backgroundColor: '#1D4ED8',
-        paddingHorizontal: 20,
-        paddingVertical: 10,
-        borderRadius: 8,
-        marginTop: 15,
+        backgroundColor: '#0F172A',
+        paddingHorizontal: 16,
+        paddingVertical: 8,
+        borderRadius: 6,
+        marginTop: 12,
     },
-
     botonTexto: {
         color: '#FFFFFF',
-        fontWeight: 'bold',
+        fontWeight: '600',
+        fontSize: 12,
     },
-
     vacio: {
         alignItems: 'center',
-        padding: 35,
+        padding: 40,
         backgroundColor: '#FFFFFF',
-        borderRadius: 12,
+        borderRadius: 10,
+        borderWidth: 1,
+        borderColor: '#E2E8F0',
+        marginTop: 20,
     },
-
     vacioTitulo: {
-        fontSize: 16,
-        fontWeight: 'bold',
-        color: '#334155',
+        fontSize: 15,
+        fontWeight: '700',
+        color: '#1E293B',
     },
-
     vacioTexto: {
-        fontSize: 13,
+        fontSize: 12,
         color: '#64748B',
         textAlign: 'center',
-        marginTop: 8,
+        marginTop: 4,
     },
-
 });
