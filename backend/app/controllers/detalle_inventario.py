@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from app.models.detalle_inventario import DetalleInventario
 from app.models.inventarios import Inventarios
 from app.models.producto import Producto
-from app.models.usuario import Usuario
+from app.models.estado import Estado
 
 from app.schemas.detalle_inventario import DetalleInventarioCrear
 
@@ -23,21 +23,21 @@ def registrar_detalle_inventario(
         if not inventario:
             raise ValueError("El inventario no existe.")
 
-        # Validar que exista el usuario
-        usuario = db.query(Usuario).filter(
-            Usuario.id_usuario == datos.id_usuario
-        ).first()
-
-        if not usuario:
-            raise ValueError("El usuario no existe.")
-
-        # Validar que exista el producto
+        # Validar que el Producto exista
         producto = db.query(Producto).filter(
             Producto.id_producto == datos.id_producto
         ).first()
 
         if not producto:
             raise ValueError("El producto no existe.")
+
+        # Validar que exista el producto
+        estado = db.query(Estado).filter(
+            Estado.id_estado == datos.id_estado
+        ).first()
+
+        if not estado:
+            raise ValueError("El estado no existe.")
 
         # Calcular diferencia
         diferencia = (
@@ -47,12 +47,12 @@ def registrar_detalle_inventario(
         # Crear registro
         nuevo_detalle = DetalleInventario(
             id_inventario=datos.id_inventario,
-            id_usuario=datos.id_usuario,
             id_producto=datos.id_producto,
             cantidad_anterior=datos.cantidad_anterior,
             cantidad_actual=datos.cantidad_actual,
             diferencia=diferencia,
-            observacion=datos.observacion
+            observacion=datos.observacion,
+            id_estado=datos.id_estado
         )
 
         db.add(nuevo_detalle)

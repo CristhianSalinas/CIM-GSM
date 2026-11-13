@@ -1,10 +1,15 @@
+
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { useEffect } from 'react';
+import { AppState } from 'react-native';
 
-// Importa el componente PantallaActual
 import PantallaActual from '../componentes/Ayudas/pantalla_actual';
 
-import { obtenerToken } from '../constants/auth';
+import {
+    obtenerToken,
+    tokenExpirado,
+    eliminarToken
+} from '../constants/auth';
 
 export default function RootLayout() {
 
@@ -12,46 +17,94 @@ export default function RootLayout() {
     const segments = useSegments();
 
     const segmentoActual = segments[0];
-    
+
     useEffect(() => {
+
+        let activo = true;
 
         const verificarSesion = async () => {
 
             try {
+
+                if (!segments.length) return;
+
                 const token = await obtenerToken();
 
-                // No hay sesión y no está en login
-                if (!token && segmentoActual !== 'login') {
-                    router.replace('/login');
+                const estaEnAuth = segmentoActual === '(auth)';
+
+                if (!token) {
+
+                    if (!estaEnAuth && activo) {
+                        router.replace('/(auth)/login');
+                    }
+
                     return;
                 }
 
-                // Ya tiene sesión e intenta entrar al login
-                if (token && segmentoActual === 'login') {
-                    router.replace('/(tabs)');
+                if (tokenExpirado(token)) {
+
+                    console.log('Sesión expirada. Cerrando sesión...');
+
+                    await eliminarToken();
+
+                    if (activo) {
+                        router.replace('/(auth)/login');
+                    }
+
+                    return;
                 }
 
+                if (estaEnAuth && activo) {
+                    router.replace('/(tabs)');
+                    return;
+                }
+
+                console.log('Sesión vigente');
+
             } catch (error) {
+
                 console.log('Error verificando sesión:', error);
-                router.replace('/login');
+
+                await eliminarToken();
+
+                if (activo) {
+                    router.replace('/(auth)/login');
+                }
             }
         };
 
         verificarSesion();
 
-    }, [segmentoActual]);
+        const suscripcion = AppState.addEventListener(
+            'change',
+            (estado) => {
+                if (estado === 'active') {
+                    verificarSesion();
+                }
+            }
+        );
 
+        return () => {
+            activo = false;
+            suscripcion.remove();
+        };
 
-  return (
-    <>  
-    
-      <PantallaActual />
+    }, [segmentoActual, router]);
 
-      <Stack screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="(tabs)" />
-        <Stack.Screen name="login" />
-      </Stack>
-      
-    </>
-  );
+    return (
+        <>
+            <PantallaActual />
+
+            <Stack screenOptions={{ headerShown: false }}>
+                <Stack.Screen name="(auth)/login" />
+                <Stack.Screen name="(auth)/register" />
+                <Stack.Screen name="(tabs)" />
+                <Stack.Screen name="App" />
+                <Stack.Screen name="Pruebas" />
+                <Stack.Screen name="index" />
+                <Stack.Screen name="pedidos/CrearPedido" />
+                <Stack.Screen name="pedidos/CrearSalida" />
+            </Stack>
+        </>
+    );
 }

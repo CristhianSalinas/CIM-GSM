@@ -125,6 +125,9 @@ export default function ProductoInventario() {
         }
     }, [id_categoria]);
 
+
+
+
     useEffect(() => {
         if (!id_inventario || !id_categoria) {
             setError('No se recibieron correctamente los datos del inventario.');
@@ -133,6 +136,10 @@ export default function ProductoInventario() {
         }
         cargarProductos();
     }, [id_inventario, id_categoria, cargarProductos]);
+
+
+
+    
 
     const actualizar = () => {
         setActualizando(true);

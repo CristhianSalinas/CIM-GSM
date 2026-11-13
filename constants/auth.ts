@@ -1,8 +1,34 @@
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { jwtDecode } from 'jwt-decode';
+
+interface TokenPayload {
+    exp?: number;
+}
+
+
 
 const TOKEN_KEY = 'token';
 const USER_KEY = 'usuario';
+
+
+export const tokenExpirado = (token: string): boolean => {
+    try {
+        const datos = jwtDecode<TokenPayload>(token);
+
+        if (!datos.exp) {
+            return true;
+        }
+
+        // exp viene expresado en segundos
+        const ahora = Math.floor(Date.now() / 1000);
+
+        return datos.exp <= ahora;
+
+    } catch (error) {
+        return true;
+    }
+};
 
 // Guardar token después del login
 export const guardarToken = async (token: string) => {

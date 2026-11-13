@@ -14,14 +14,17 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 
 import BotonVolver from '../../../componentes/botones/boton_volver';
+import { obtenerToken, tokenExpirado, eliminarToken } from '../../../constants/auth';
 import { API_URL } from '../../../constants/api';
 
 interface Inventario {
     id_inventario: number;
-    id_categoria: number | null;
+    id_usuario: number;
+    id_categoria: number ;
     categoria: string | null;
-    id_estado: number | null;
-    estado: string | null;
+    id_estado: number ;
+    estado: string ;
+    observacion: string | null;
 }
 
 export default function Inventarios() {
@@ -69,36 +72,82 @@ export default function Inventarios() {
         }
     };
 
-    // Consultar inventarios
-    const cargarInventarios = useCallback(async (esActualizacion = false) => {
-        try {
-            setError('');
-            const respuesta = await fetch(`${API_URL}/api/inventarios/`);
+   
+// Consultar inventarios
 
-            if (!respuesta.ok) {
-                throw new Error(`Error del servidor: ${respuesta.status}`);
-            }
+// Consultar inventarios
+const cargarInventarios = useCallback(async (esActualizacion = false) => {
+    try {
 
-            const datos: unknown = await respuesta.json();
+        const token = await obtenerToken();
 
-            if (!Array.isArray(datos)) {
-                throw new Error('La respuesta del servidor no tiene un formato válido.');
-            }
-
-            setInventarios(datos as Inventario[]);
-        } catch (error) {
-            console.log('Error cargando inventarios:', error);
-            const mensaje = error instanceof Error ? error.message : 'No fue posible cargar los inventarios.';
-            setError(mensaje);
-
-            if (esActualizacion) {
-                Alert.alert('Error', 'No fue posible actualizar la lista de inventarios.');
-            }
-        } finally {
-            setCargando(false);
-            setActualizando(false);
+        // 1. Comprobar si existe el token
+        if (!token) {
+            throw new Error('No hay token de autenticación.');
         }
-    }, []);
+
+        // 2. Comprobar si expiró
+        if (tokenExpirado(token)) {
+
+            await eliminarToken();
+
+            throw new Error('Tu sesión ha expirado. Inicia sesión nuevamente.');
+        }
+
+        setError('');
+
+        const respuesta = await fetch(`${API_URL}/api/inventarios/`, {
+            method: 'GET',
+            headers: {
+                Authorization: `Bearer ${token}`,
+                Accept: 'application/json'
+            }
+        });
+
+
+        // 4. Comprobar si FastAPI rechazó la autenticación
+        if (respuesta.status === 401) {
+
+            await eliminarToken();
+
+            throw new Error('Sesión inválida o expirada. Inicia sesión nuevamente.');
+        }
+
+        if (!respuesta.ok) {
+            throw new Error(`Error del servidor: ${respuesta.status}`);
+        }
+
+        // 5. Procesar respuesta
+        const datos: unknown = await respuesta.json();
+
+        if (!Array.isArray(datos)) {
+            throw new Error('La respuesta del servidor no tiene un formato válido.');
+        }
+
+        setInventarios(datos as Inventario[]);
+
+    } catch (error) {
+
+        console.log('Error cargando inventarios:', error);
+
+        const mensaje = error instanceof Error
+            ? error.message
+            : 'No fue posible cargar los inventarios.';
+
+        setError(mensaje);
+
+        if (esActualizacion) {
+            Alert.alert('Error', mensaje);
+        }
+
+    } finally {
+        setCargando(false);
+        setActualizando(false);
+    }
+
+}, []);
+
+
 
     useEffect(() => {
         cargarInventarios();

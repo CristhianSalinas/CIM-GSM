@@ -21,6 +21,7 @@ export default function PedidosEntrada() {
   const router = useRouter();
   const [pedidos, setPedidos] = useState<Pedido[]>([]);
   const [cargando, setCargando] = useState(true);
+  
   const crearPedido = () => {
     router.push('/pedidos/CrearPedido');
   };
@@ -40,6 +41,8 @@ export default function PedidosEntrada() {
       setCargando(false);
     }
   };
+
+  
 
   useEffect(() => {
     cargarPedidos();

@@ -15,12 +15,11 @@ import {
 
 
 import { router } from 'expo-router';
-import { eliminarToken } from '../../../constants/auth';
 import { useEffect, useState } from 'react';
 import BotonInicio from '../../../componentes/botones/boton_inicio';
 import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
 import { API_URL } from '../../../constants/api';
-import { obtenerToken } from '../../../constants/auth';
+import { obtenerToken, tokenExpirado, eliminarToken } from '../../../constants/auth';
 
 const cerrarSesion = async () => {
     await eliminarToken();
@@ -114,6 +113,14 @@ export default function Conteo() {
 
         if (!token) {
             throw new Error('No hay token de autenticación.');
+        }
+
+         // 2. Verificar si expiró
+        if (tokenExpirado(token)) {
+
+            await eliminarToken();
+
+            throw new Error('Tu sesión ha expirado. Inicia sesión nuevamente.');
         }
 
         const respuesta = await fetch(

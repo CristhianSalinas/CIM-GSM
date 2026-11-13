@@ -14,25 +14,15 @@ def obtener_inventarios(db: Session):
             i.id_inventario,
             i.id_usuario,
             i.id_ubicacion,
-            i.id_producto,
             i.id_categoria,
-            i.id_estado,
-            i.cantidad_anterior,
-            i.cantidad_contada,
-            i.diferencia,
             i.fecha,
             i.observacion,
-
-            c.nombre AS categoria,
-            e.nombre AS estado
+            c.nombre AS categoria
 
         FROM inventarios i
 
         LEFT JOIN categorias c
             ON c.id_categoria = i.id_categoria
-
-        LEFT JOIN estado e
-            ON e.id_estado = i.id_estado
 
         ORDER BY i.id_inventario DESC
     """)
@@ -161,7 +151,6 @@ def registrar_inventario(db: Session, datos: InventariosCrear):
         nuevo_inventario = Inventarios(
             id_usuario=datos.id_usuario,
             id_ubicacion=datos.id_ubicacion,
-            id_producto=datos.id_producto,
             id_categoria=datos.id_categoria,
             id_estado=datos.id_estado,
             cantidad_anterior=cantidad_anterior,

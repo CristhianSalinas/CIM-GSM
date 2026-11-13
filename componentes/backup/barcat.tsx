@@ -6,7 +6,6 @@ import { BrowserRouter as Router, Route, Routes, Link } from 'react-router';
 
 import Home from '../Home';
 import Pruebas from '../Pruebas';
-import Login from '../Login';
 import Inventario from '../Inventario';
 
 
@@ -71,7 +70,7 @@ export default function Barcat() {
 
           <Routes>
             <Route path="../Home" element={<Home />} />
-            <Route path="../Login" element={<Login />} />
+
             <Route path="../Inventario" element={<Inventario />} />
           </Routes>
         </Router>

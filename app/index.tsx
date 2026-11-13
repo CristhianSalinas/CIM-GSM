@@ -17,7 +17,7 @@ import {
 } from 'react-native-safe-area-context';
 
 import { useEffect, useState, useCallback  } from 'react';
-import { obtenerToken, obtenerUsuario, eliminarToken } from '../constants/auth';
+import { obtenerToken, obtenerUsuario, eliminarToken, tokenExpirado } from '../constants/auth';
 import { useRouter, useFocusEffect} from 'expo-router';
 
 export default function Index() {
@@ -31,30 +31,55 @@ export default function Index() {
 
     const esWeb = Platform.OS === 'web';
     const esPantallaGrande = esWeb && width >= 768;
+useFocusEffect(
+    useCallback(() => {
 
-    useFocusEffect(
-        useCallback(() => {
-            const cargarUsuario = async () => {
-                try {
-                    const token = await obtenerToken();
-                    const usuario = await obtenerUsuario();
+        const cargarUsuario = async () => {
+            try {
+                const token = await obtenerToken();
 
-                    console.log('TOKEN:', !!token);
-                    console.log('PERFIL:', usuario);
-
-                    setSesionActiva(!!token);
-                    setUsuarioActual(usuario);
-
-                } catch (error) {
-                    console.log('Error cargando perfil:', error);
+                // 1. Comprobar si existe el token
+                if (!token) {
                     setSesionActiva(false);
                     setUsuarioActual(null);
+                    return;
                 }
-            };
 
-            cargarUsuario();
-        }, [])
-    );
+                // 2. Comprobar si expiró
+                if (tokenExpirado(token)) {
+
+                    console.log('TOKEN EXPIRADO');
+
+                    await eliminarToken();
+
+                    setSesionActiva(false);
+                    setUsuarioActual(null);
+
+                    return;
+                }
+
+                // 3. Obtener usuario
+                const usuario = await obtenerUsuario();
+
+                console.log('TOKEN VIGENTE:', !!token);
+                console.log('PERFIL:', usuario);
+
+                setSesionActiva(true);
+                setUsuarioActual(usuario);
+
+            } catch (error) {
+
+                console.log('Error cargando perfil:', error);
+
+                setSesionActiva(false);
+                setUsuarioActual(null);
+            }
+        };
+
+        cargarUsuario();
+
+    }, [])
+);
 
 
     const [menuVisible, setMenuVisible] = useState(false);
