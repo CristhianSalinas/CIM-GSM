@@ -13,7 +13,14 @@ export default function TabsLayout() {
         name="movimientos"
         options={{ title: 'Movimientos' }}
       />
+
+      <Tabs.Screen
+        name="historial"
+        options={{ title: 'historial' }}
+      />
     </Tabs>
+
+    
 
     
   );

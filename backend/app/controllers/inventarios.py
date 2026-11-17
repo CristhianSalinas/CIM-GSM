@@ -1,9 +1,11 @@
-
 from sqlalchemy.orm import Session
 from sqlalchemy import text
 
 from app.models.inventarios import Inventarios
 from app.models.producto import Producto
+from app.models.detalle_inventario import DetalleInventario
+from app.models.historial_movimientos import Movimientos
+
 from app.schemas.inventarios import InventariosCrear
 
 
@@ -17,13 +19,11 @@ def obtener_inventarios(db: Session):
             i.id_categoria,
             i.fecha,
             i.observacion,
+            i.id_estado,
             c.nombre AS categoria
-
         FROM inventarios i
-
         LEFT JOIN categorias c
             ON c.id_categoria = i.id_categoria
-
         ORDER BY i.id_inventario DESC
     """)
 
@@ -31,138 +31,73 @@ def obtener_inventarios(db: Session):
 
     return [dict(fila) for fila in resultado]
 
-def finalizar_inventario(db: Session, id_inventario: int, datos):
+
+
+def obtener_inventarios_conteo(db: Session):
+
+    consulta = text("""
+        SELECT
+            SUM(CASE WHEN id_estado = 2 THEN 1 ELSE 0 END)
+                AS inventarios_pendientes,
+
+            SUM(CASE WHEN id_estado = 3 THEN 1 ELSE 0 END)
+                AS inventarios_en_progreso
+
+        FROM inventarios
+    """)
+
+    resultado = db.execute(consulta).mappings().first()
+
+    return dict(resultado)
+
+
+
+def registrar_inventario(db: Session, datos: InventariosCrear):
 
     try:
-        # 1. Buscar y bloquear el inventario
-        inventario = db.query(Inventarios).filter(
-            Inventarios.id_inventario == id_inventario
-        ).with_for_update().first()
+        if not datos.productos:
+            raise ValueError("Debes agregar al menos un producto.")
 
-        if not inventario:
-            return None
-
-        # 2. Verificar que no esté finalizado
-        if inventario.id_estado == 1:
-            raise ValueError("Este inventario ya está completado")
-
-        # 3. Validar usuario responsable
-        if not inventario.id_usuario:
-            raise ValueError(
-                "El inventario no tiene un usuario asignado"
-            )
-
-        # 4. Evitar productos repetidos
         ids_productos = [
-            producto.id_producto for producto in datos.productos
+            item.id_producto for item in datos.productos
         ]
 
         if len(ids_productos) != len(set(ids_productos)):
-            raise ValueError(
-                "Hay productos repetidos en el inventario"
-            )
+            raise ValueError("Hay productos repetidos en el inventario.")
 
-        # 5. Procesar cada producto
+        nuevo_inventario = Inventarios(
+            id_usuario=datos.id_usuario,
+            id_ubicacion=None,
+            id_categoria=datos.id_categoria,
+            id_estado=3,
+            observacion=datos.observacion or ""
+        )
+
+        db.add(nuevo_inventario)
+        db.flush()
+
         for item in datos.productos:
 
             producto = db.query(Producto).filter(
                 Producto.id_producto == item.id_producto
-            ).with_for_update().first()
+            ).first()
 
             if not producto:
                 raise ValueError(
-                    f"No existe el producto {item.id_producto}"
+                    f"El producto {item.id_producto} no existe."
                 )
 
-            # Existencia real antes del conteo
-            cantidad_anterior = producto.cantidad_fisica or 0
-
-            # Diferencia calculada por el backend
-            diferencia = item.cantidad_actual - cantidad_anterior
-
-            # 6. Registrar detalle del inventario
-            db.execute(
-                text("""
-                    INSERT INTO detalle_inventario (
-                        id_inventario,
-                        id_usuario,
-                        id_producto,
-                        cantidad_anterior,
-                        cantidad_actual,
-                        diferencia,
-                        observacion,
-                        fecha_finalizar
-                    )
-                    VALUES (
-                        :id_inventario,
-                        :id_usuario,
-                        :id_producto,
-                        :cantidad_anterior,
-                        :cantidad_actual,
-                        :diferencia,
-                        :observacion,
-                        NOW()
-                    )
-                """),
-                {
-                    "id_inventario": id_inventario,
-                    "id_usuario": inventario.id_usuario,
-                    "id_producto": item.id_producto,
-                    "cantidad_anterior": cantidad_anterior,
-                    "cantidad_actual": item.cantidad_actual,
-                    "diferencia": diferencia,
-                    "observacion": item.observacion
-                }
+            detalle = DetalleInventario(
+                id_inventario=nuevo_inventario.id_inventario,
+                id_producto=producto.id_producto,
+                cantidad_anterior=producto.cantidad_fisica or 0,
+                cantidad_contada=0,
+                diferencia=0,
+                id_estado=2
             )
 
-            # 7. Actualizar existencia del producto
-            producto.cantidad_fisica = item.cantidad_actual
+            db.add(detalle)
 
-        # 8. Marcar inventario como completado
-        inventario.id_estado = 1
-
-        # 9. Guardar todos los cambios
-        db.commit()
-
-        return inventario
-
-    except Exception:
-        db.rollback()
-        raise
-    
-def registrar_inventario(db: Session, datos: InventariosCrear):
-
-    try:
-        # Buscar producto y bloquear registro durante la operación
-        producto = db.query(Producto).filter(
-            Producto.id_producto == datos.id_producto
-        ).with_for_update().first()
-
-        if not producto:
-            return None
-
-        # Obtener cantidad física anterior
-        cantidad_anterior = producto.cantidad_fisica or 0
-
-        # Calcular diferencia
-        diferencia = datos.cantidad_contada - cantidad_anterior
-
-        # Crear registro del inventario
-        nuevo_inventario = Inventarios(
-            id_usuario=datos.id_usuario,
-            id_ubicacion=datos.id_ubicacion,
-            id_categoria=datos.id_categoria,
-            id_estado=datos.id_estado,
-            cantidad_anterior=cantidad_anterior,
-            cantidad_contada=datos.cantidad_contada,
-            diferencia=diferencia,
-            observacion=datos.observacion or ""
-        )
-
-        # Actualizar existencias del producto
-        producto.cantidad_fisica = datos.cantidad_contada
-
-        db.add(nuevo_inventario)
         db.commit()
         db.refresh(nuevo_inventario)
 
@@ -172,4 +107,84 @@ def registrar_inventario(db: Session, datos: InventariosCrear):
         db.rollback()
         raise
 
-    
+
+def finalizar_inventario(db: Session, id_inventario: int):
+
+    try:
+        inventario = db.query(Inventarios).filter(
+            Inventarios.id_inventario == id_inventario
+        ).with_for_update().first()
+
+        if not inventario:
+            return None
+
+        if inventario.id_estado == 1:
+            raise ValueError("El inventario ya está completado.")
+
+        if inventario.id_estado != 3:
+            raise ValueError("El inventario no está en progreso.")
+
+        if not inventario.id_usuario:
+            raise ValueError(
+                "El inventario no tiene un usuario asignado."
+            )
+
+        detalles = db.query(DetalleInventario).filter(
+            DetalleInventario.id_inventario == id_inventario
+        ).with_for_update().all()
+
+        if not detalles:
+            raise ValueError("El inventario no tiene productos.")
+
+        pendientes = [
+            detalle for detalle in detalles
+            if detalle.id_estado != 1
+        ]
+
+        if pendientes:
+            raise ValueError(
+                f"Faltan {len(pendientes)} productos por contar."
+            )
+
+        for detalle in detalles:
+
+            producto = db.query(Producto).filter(
+                Producto.id_producto == detalle.id_producto
+            ).with_for_update().first()
+
+            if not producto:
+                raise ValueError(
+                    f"No existe el producto {detalle.id_producto}."
+                )
+
+            # La existencia oficial solo cambia al finalizar.
+            producto.cantidad_fisica = detalle.cantidad_contada
+
+            
+
+            movimiento = Movimientos(
+                id_usuario=inventario.id_usuario,
+                id_producto=detalle.id_producto,
+                id_inventario=id_inventario,
+                id_movimentos=3,
+                id_pedido=None,
+                id_estado=1,
+                cantidad=detalle.cantidad_contada,
+                observacion=(
+                    f"Ajuste por inventario #{id_inventario}. "
+                    f"Diferencia: {detalle.diferencia}"
+                )
+            )
+
+            db.add(movimiento)
+
+        inventario.id_estado = 1
+
+        db.commit()
+        db.refresh(inventario)
+
+        return inventario
+
+    except Exception:
+        db.rollback()
+        raise

@@ -25,6 +25,7 @@ class DetallePedido(Base):
     id_producto = Column(Integer, ForeignKey("producto.id_producto"), nullable=False)
     cantidad_solicitada = Column(Integer, nullable=False)
     cantidad_despachada = Column(Integer, nullable=False, default=0)
+    id_estado = Column(Integer, ForeignKey("estado.id_estado"), nullable=False)
     
 
 

@@ -1,5 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
+import { useUsuarioActual } from '../../hooks/useUsuarioActual';
+import { useAuth } from '../../context/AuthContext';
+import { API_URL } from '../../constants/api';
+import { obtenerToken } from '../../constants/auth';
+import { useLocalSearchParams } from 'expo-router';
+
+
 import {
     View,
     Text,
@@ -11,9 +19,8 @@ import {
     Platform,
     ActivityIndicator
 } from 'react-native';
-import { useRouter } from 'expo-router';
-import { obtenerToken, tokenExpirado, eliminarToken } from '../../constants/auth';
-import { API_URL } from '../../constants/api';
+
+
 
 interface Cliente {
     id_cliente: number;
@@ -35,53 +42,48 @@ interface Producto {
 interface ProductoSeleccionado {
     id_producto: number;
     nombre: string;
-    cantidad: number;
+    cantidad_solicitada: number;
 }
 
 export default function CrearPedido() {
     const [busquedaProducto, setBusquedaProducto] = useState('');
     const [resultadosProductos, setResultadosProductos] = useState<Producto[]>([]);
-    const [mostrarClientes, setMostrarClientes] = useState(false);
-    const router = useRouter();
-    const [clientes, setClientes] = useState<Cliente[]>([]);
-    const [productos, setProductos] = useState<Producto[]>([]);
-    const [pedido, setPedido] = useState('');
-
-    const [clienteSeleccionado, setClienteSeleccionado] = useState<number | null>(null);
     const [productoSeleccionado, setProductoSeleccionado] = useState<Producto | null>(null);
-    const [cantidad, setCantidad] = useState('1');
     const [listaProductos, setListaProductos] = useState<ProductoSeleccionado[]>([]);
 
+
+    const [mostrarClientes, setMostrarClientes] = useState(false);
+    const [clientes, setClientes] = useState<Cliente[]>([]);
+    const [clienteSeleccionado, setClienteSeleccionado] = useState<number | null>(null);
+        
+    const [cantidad, setCantidad] = useState('1');
+    
     const [cargando, setCargando] = useState(false);
     const [guardando, setGuardando] = useState(false);
+
+   const { tipo: tipoParametro } = useLocalSearchParams<{ tipo: string }>();
+
+const tipo = Number(tipoParametro);
+
+    const {usuarioActual} = useUsuarioActual();
+
+    const router = useRouter();  
+
+
 
     useEffect(() => {
         cargarDatos();
     }, []);
 
+
     const cargarDatos = async () => {
         try {
             setCargando(true);
+
             const token = await obtenerToken();
-
-            if (!token) {
-                throw new Error('No hay token de autenticación.');
-            }
-
-            if (tokenExpirado(token)) {
-                await eliminarToken();
-                throw new Error('Tu sesión ha expirado. Inicia sesión nuevamente.');
-            }
-
-            const [respuestaClientes, respuestaProductos] = await Promise.all([
+    
+            const [respuestaClientes] = await Promise.all([
                 fetch(`${API_URL}/api/clientes/`, {
-                    method: 'GET',
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
-                    }
-                }),
-                fetch(`${API_URL}/api/productos/`, {
                     method: 'GET',
                     headers: {
                         'Authorization': `Bearer ${token}`,
@@ -94,15 +96,9 @@ export default function CrearPedido() {
                 throw new Error(`Error clientes: HTTP ${respuestaClientes.status}`);
             }
 
-            if (!respuestaProductos.ok) {
-                throw new Error(`Error productos: HTTP ${respuestaProductos.status}`);
-            }
-
             const datosClientes = await respuestaClientes.json();
-            const datosProductos = await respuestaProductos.json();
 
             setClientes(datosClientes);
-            setProductos(datosProductos);
 
         } catch (error) {
             console.error('ERROR AL CARGAR DATOS:', error);
@@ -115,6 +111,9 @@ export default function CrearPedido() {
         }
     };
 
+
+
+    
     const mostrarMensaje = (titulo: string, mensaje: string) => {
         if (Platform.OS === 'web') {
             window.alert(`${titulo}\n\n${mensaje}`);
@@ -122,6 +121,24 @@ export default function CrearPedido() {
             Alert.alert(titulo, mensaje);
         }
     };
+    
+    const textos = tipo === 1
+    ? {
+        titulo: 'Crear INGRESO',
+        descripcion: 'Complete los datos para generar un nuevo pedido',
+        boton: 'GUARDAR INGRESO',
+        id_movimiento: 1
+
+    }
+    : {
+        titulo: 'CREAR SALIDA',
+        descripcion: 'Complete los datos para generar una salida',
+        boton: 'GUARDAR SALIDA',
+        id_movimiento: 2
+    };
+
+
+
 
     const buscarProductos = async (texto: string) => {
         setBusquedaProducto(texto);
@@ -148,6 +165,9 @@ export default function CrearPedido() {
         }
     };
 
+
+
+
     const agregarProducto = () => {
         if (!productoSeleccionado) {
             Alert.alert('Atención', 'Selecciona un producto de la lista.');
@@ -166,7 +186,7 @@ export default function CrearPedido() {
             {
                 id_producto: productoSeleccionado.id_producto,
                 nombre: productoSeleccionado.nombre,
-                cantidad: cantidadNumerica
+                cantidad_solicitada: cantidadNumerica
             }
         ]);
 
@@ -175,9 +195,15 @@ export default function CrearPedido() {
         setCantidad('1');
     };
 
+
+
+
     const eliminarProducto = (indice: number) => {
         setListaProductos(actual => actual.filter((_, i) => i !== indice));
     };
+
+
+
 
     const guardarPedido = async () => {
         if (!clienteSeleccionado) {
@@ -195,9 +221,11 @@ export default function CrearPedido() {
 
             const datosPedido = {
                 id_cliente: clienteSeleccionado,
+                id_entrada: textos.id_movimiento,
+                id_usuario: usuarioActual.id_usuario,
                 productos: listaProductos.map(item => ({
                     id_producto: item.id_producto,
-                    cantidad: item.cantidad
+                    cantidad_solicitada: item.cantidad_solicitada
                 }))
             };
 
@@ -231,6 +259,9 @@ export default function CrearPedido() {
         }
     };
 
+
+
+
     if (cargando) {
         return (
             <View style={styles.cargando}>
@@ -240,7 +271,13 @@ export default function CrearPedido() {
         );
     }
 
+
+
+
     const clienteObj = clientes.find(c => c.id_cliente === clienteSeleccionado);
+
+
+
 
     return (
         <SafeAreaProvider>
@@ -248,19 +285,8 @@ export default function CrearPedido() {
                 <ScrollView contentContainerStyle={styles.contenedor} showsVerticalScrollIndicator={false}>
                     
                     {/* ENCABEZADO */}
-                    <Text style={styles.titulo}>Crear Pedido</Text>
-                    <Text style={styles.subtitulo}>Complete los datos para generar un nuevo pedido</Text>
-
-                    {/* NÚMERO DE PEDIDO */}
-                    <Text style={styles.etiqueta}>Nº de Pedido</Text>
-                    <TextInput
-                        style={styles.input}
-                        placeholder="Ej. 00123"
-                        placeholderTextColor="#94A3B8"
-                        value={pedido}
-                        keyboardType="numeric"
-                        onChangeText={setPedido}
-                    />
+                    <Text style={styles.titulo}>{textos.titulo} </Text>
+                    <Text style={styles.subtitulo}>{textos.descripcion}</Text>
 
                     {/* CLIENTE */}
                     <Text style={styles.etiqueta}>Cliente</Text>
@@ -355,7 +381,7 @@ export default function CrearPedido() {
                             <View key={indice} style={styles.productoAgregado}>
                                 <View style={{ flex: 1 }}>
                                     <Text style={styles.nombreProducto}>{item.nombre}</Text>
-                                    <Text style={styles.secundario}>Cantidad: {item.cantidad}</Text>
+                                    <Text style={styles.secundario}>Cantidad: {item.cantidad_solicitada}</Text>
                                 </View>
                                 <Pressable onPress={() => eliminarProducto(indice)} style={styles.btnEliminarContainer}>
                                     <Text style={styles.eliminar}>Eliminar</Text>
@@ -373,7 +399,7 @@ export default function CrearPedido() {
                         {guardando ? (
                             <ActivityIndicator color="#FFFFFF" size="small" />
                         ) : (
-                            <Text style={styles.textoBoton}>GUARDAR PEDIDO</Text>
+                            <Text style={styles.textoBoton}>{textos.boton}</Text>
                         )}
                     </Pressable>
 

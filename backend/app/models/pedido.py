@@ -13,6 +13,11 @@ class Pedido(Base):
         ForeignKey("cliente.id_cliente"),
         nullable=False
     )
+    id_usuario = Column(
+            Integer,
+            ForeignKey("usuario.id_usuario"),
+            nullable=False
+        )
     fecha = Column(DateTime, server_default=func.now(), nullable=False)
     id_estado = Column(Integer, ForeignKey("estado.id_estado"), nullable=False)
     id_entrada = Column(Integer, ForeignKey("salida_entrada.id"), nullable=False)

@@ -7,6 +7,9 @@ import categorias from '../data/Categorias.json';
 import BotonInicio from '../componentes/botones/boton_inicio';
 import BotonVolver from '../componentes/botones/boton_volver';
 import CustomModal from '../componentes/botones/ScreenModal';
+import * as Clipboard from 'expo-clipboard';
+import { obtenerToken } from '../constants/auth';
+import { Alert } from 'react-native';
 
 interface Producto { 
     id: number; 
@@ -22,9 +25,14 @@ export default function Inventario(){
   const datos = categorias as Producto[];
   const [modalVisible, setModalVisible] = useState(false);
 
+
+
   return (
     <View style={styles.container}>
       <BotonInicio />
+
+
+      
 
       <Button mode="contained" onPress={() => console.log('¡Funciona!')}>
         Prueba Paper
@@ -188,10 +196,7 @@ export default function Inventario(){
           </ScrollView>
           
       </View>
-      <CustomModal 
-          modalVisible={modalVisible} 
-          setModalVisible={setModalVisible} 
-        />
+      
     </View>
   );
 }

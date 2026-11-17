@@ -3,6 +3,8 @@ from pydantic import BaseModel, ConfigDict, Field
 from datetime import datetime
 
 
+
+
 class PedidoCrear(BaseModel):
     numero_pedido: int
     id_cliente: int
@@ -11,12 +13,15 @@ class PedidoCrear(BaseModel):
 
 class ProductoPedidoCrear(BaseModel):
     id_producto: int
-    cantidad: int = Field(gt=0)
+    cantidad_solicitada: int = Field(gt=0)
+    observacion: str | None = None
 
 
 class PedidoConProductosCrear(BaseModel):
     id_cliente: int
-    productos: list[ProductoPedidoCrear]
+    id_usuario: int
+    id_entrada: int
+    productos: list[ProductoPedidoCrear] = Field(min_length=1)
 
 
 class PedidoRespuesta(BaseModel):

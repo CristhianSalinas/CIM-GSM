@@ -6,7 +6,7 @@ from app.models import usuario, rol, producto, cliente, detalle_inventario
 
 from app.routes import usuario, clientes, productos, pedido, estado, marca_producto, tipo_documento
 from app.routes import entradas_salidas, detalle_pedido, inventarios, ubicacion, historial_movimientos
-from app.routes import auth, register, rol, detalle_inventario
+from app.routes import auth, register, rol, detalle_inventario,categorias
 
 
 
@@ -50,7 +50,7 @@ app.include_router(auth.router)
 app.include_router(register.router)
 app.include_router(rol.router)
 app.include_router(detalle_inventario.router)
-
+app.include_router(categorias.router)
 
 
 @app.get("/")

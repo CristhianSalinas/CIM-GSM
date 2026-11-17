@@ -37,7 +37,9 @@ class Inventarios(Base):
     )
 
     fecha = Column(
-        DateTime
+        DateTime,
+        nullable=False,
+        server_default=func.now()
     )
 
     observacion = Column(String(150))

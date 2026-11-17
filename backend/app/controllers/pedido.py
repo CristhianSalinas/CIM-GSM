@@ -1,10 +1,12 @@
 from sqlalchemy.orm import Session
+from sqlalchemy import text
 from app.models.pedido import Pedido
 from app.models.cliente import Cliente
 from app.models.detalle_pedido import DetallePedido
 from app.models.producto import Producto
 from sqlalchemy import func
 from app.schemas.pedido import PedidoConProductosCrear
+from fastapi import HTTPException
 
 
 def obtener_pedidos(db: Session):
@@ -16,10 +18,27 @@ def buscar_productos(db: Session, busqueda: str):
         (Producto.nombre.ilike(f"%{busqueda}%"))
     ).limit(20).all()
 
+
+def obtener_pedidos_conteo(db: Session):
+
+    consulta = text("""
+        SELECT
+            SUM(CASE WHEN id_estado = 2 THEN 1 ELSE 0 END)
+                AS pedidos_pendientes,
+
+            SUM(CASE WHEN id_estado = 3 THEN 1 ELSE 0 END)
+                AS pedidos_en_progreso
+
+        FROM pedido
+    """)
+
+    resultado = db.execute(consulta).mappings().first()
+
+    return dict(resultado)
+
 def crear_pedido(
     db: Session,
     datos: PedidoConProductosCrear,
-    tipo_movimiento: int = 1
 ):
     try:
         # Validar cliente
@@ -37,7 +56,7 @@ def crear_pedido(
         # Validar productos y cantidades
         for item in datos.productos:
 
-            if item.cantidad <= 0:
+            if item.cantidad_solicitada <= 0:
                 raise ValueError("La cantidad debe ser mayor que cero.")
 
             producto = db.query(Producto).filter(
@@ -49,6 +68,41 @@ def crear_pedido(
                     f"El producto {item.id_producto} no existe."
                 )
 
+                # VALIDAR STOCK PARA SALIDAS
+        if datos.id_entrada == 2:
+
+            cantidades = {}
+
+            for item in datos.productos:
+                cantidades[item.id_producto] = (
+                    cantidades.get(item.id_producto, 0)
+                    + item.cantidad_solicitada
+                )
+
+            for id_producto, cantidad_total in cantidades.items():
+
+                producto = db.query(Producto).filter(
+                    Producto.id_producto == id_producto
+                ).first()
+
+                if not producto:
+                    raise HTTPException(
+                        status_code=404,
+                        detail=f"Producto {id_producto} no encontrado."
+                    )
+
+                stock = producto.cantidad_fisica or 0
+
+                if cantidad_total > stock:
+                    raise HTTPException(
+                        status_code=400,
+                        detail=(
+                            f"Stock insuficiente para {producto.nombre}. "
+                            f"Disponible: {stock}. "
+                            f"Solicitado: {cantidad_total}."
+                        )
+                    )
+
         # Generar número de pedido
         ultimo_numero = db.query(
             func.max(Pedido.numero_pedido)
@@ -56,12 +110,15 @@ def crear_pedido(
 
         numero_generado = (ultimo_numero or 0) + 1
 
+        
+
         # Crear pedido
         pedido = Pedido(
             numero_pedido=numero_generado,
+            id_usuario=datos.id_usuario,
             id_cliente=datos.id_cliente,
             id_estado=2,
-            id_entrada=tipo_movimiento
+            id_entrada=datos.id_entrada,
         )
 
         db.add(pedido)
@@ -73,8 +130,9 @@ def crear_pedido(
             detalle = DetallePedido(
                 id_pedido=pedido.id_pedido,
                 id_producto=item.id_producto,
-                cantidad_solicitada=item.cantidad,
-                cantidad_despachada=0
+                cantidad_solicitada=item.cantidad_solicitada,
+                cantidad_despachada=0,
+                id_estado=2,
             )
 
             db.add(detalle)

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useLocalSearchParams } from 'expo-router';
-import { View, Text, StyleSheet, ScrollView, Pressable, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Pressable, Alert, Platform } from 'react-native';
 import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
 import { DataTable } from 'react-native-paper';
 
@@ -9,8 +9,13 @@ import { DataTable } from 'react-native-paper';
 
 import BotonVolver from '../../../componentes/botones/boton_volver';
 import CustomModal from '../../../componentes/botones/ScreenModal';
-import { API_URL } from '../../../constants/api';
+
 import { Producto } from '../../../types/Producto';
+import { obtenerToken } from '../../../constants/auth';
+
+import { useUsuarioActual } from '../../../hooks/useUsuarioActual';
+import { useAuth } from '../../../context/AuthContext';
+import { API_URL } from '../../../constants/api';
 
 
 
@@ -25,6 +30,8 @@ export default function Ingreso() {
     const [nuevoConteo, setNuevoConteo] = useState('');
     const [modalVisible, setModalVisible] = useState(false);
     const [productoSeleccionado, setProductoSeleccionado] = useState<Producto | null>(null);
+
+    const {usuarioActual} = useUsuarioActual();
 
 
 
@@ -57,65 +64,109 @@ export default function Ingreso() {
 
 
 
-  const ingresarProducto = async () => {
-      if (!productoSeleccionado) {
-          Alert.alert('Atención', 'Selecciona un producto.');
-          return;
-      }
+const ingresarProducto = async () => {
+    if (!productoSeleccionado) {
+        Alert.alert('Atención', 'Selecciona un producto.');
+        return;
+    }
 
-      if (
-          nuevoConteo.trim() === '' ||
-          !Number.isInteger(Number(nuevoConteo)) ||
-          Number(nuevoConteo) <= 0
-      ) {
-          Alert.alert('Atención', 'Ingresa una cantidad mayor que cero.');
-          return;
-      }
+    if (
+        nuevoConteo.trim() === '' ||
+        !Number.isInteger(Number(nuevoConteo)) ||
+        Number(nuevoConteo) <= 0
+    ) {
+        Alert.alert('Atención', 'Ingresa una cantidad mayor que cero.');
+        return;
+    }
 
-      const cantidad = Number(nuevoConteo);
-          try {
-              const respuesta = await fetch(`${API_URL}/api/historial_movimientos/registrar`, {
+    try {
+        const token = await obtenerToken();
+        const cantidad = Number(nuevoConteo);
+        const idDetalle = Number(productoSeleccionado.id_detalle);
+
+        const cuerpo = {
+            id_usuario: usuarioActual.id_usuario,
+            id_movimentos: 1,
+            id_detalle: idDetalle,
+            id_pedido: Number(id_pedido),
+            id_producto: productoSeleccionado.id_producto,
+            id_estado: 2,
+            id_inventario: null,
+            cantidad,
+            observacion: 'Entrada de mercancía',
+        };
+
+        const respuesta = await fetch(
+            `${API_URL}/api/historial_movimientos/registrar`,
+            {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    id_usuario: 1,
-                    id_movimentos: 1,
-                    id_pedido: Number(id_pedido),
-                    id_producto: productoSeleccionado.id_producto,
-                    cantidad: cantidad,
-                    observacion: 'Entrada de mercancía',
-                    id_detalle: productoSeleccionado.id_detalle
-                })
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(cuerpo),
+            }
+        );
+
+        const datosRespuesta = await respuesta.json();
+
+        console.log('ESTADO HTTP:', respuesta.status);
+        console.log('RESPUESTA FASTAPI:', datosRespuesta);
+
+        if (!respuesta.ok) {
+            throw new Error(JSON.stringify(datosRespuesta));
+        }
+
+        // Actualizar cantidades
+        setDatos(prev => {
+            console.log('DATOS ANTES DE ACTUALIZAR:', prev);
+            console.log('ID DETALLE BUSCADO:', idDetalle);
+
+            const nuevosDatos = prev.map(item => {
+                if (Number(item.id_detalle) === idDetalle) {
+                    console.log('PRODUCTO ACTUALIZADO:', item);
+
+                    return {
+                        ...item,
+                        cantidad_despachada:
+                            Number(item.cantidad_despachada || 0) + cantidad,
+                        cantidad_fisica:
+                            Number(item.cantidad_fisica || 0) + cantidad,
+                    };
+                }
+
+                return item;
             });
 
-            const datosRespuesta = await respuesta.json();
+            console.log('NUEVOS DATOS:', nuevosDatos);
 
-            if (!respuesta.ok) {
-                throw new Error(JSON.stringify(datosRespuesta));
-            }
+            return nuevosDatos;
+        });
 
-              setDatos(prev =>
-                prev.map(item =>
-                    item.id_detalle === productoSeleccionado.id_detalle
-                        ? {
-                            ...item,
-                            cantidad_despachada: item.cantidad_despachada + cantidad,
-                            cantidad_fisica: item.cantidad_fisica + cantidad
-                        }
-                        : item
-                )
-            );
-              
-              setProductoSeleccionado(null);
-              setNuevoConteo('');
-              setModalVisible(false);
-              Alert.alert('Éxito', 'Conteo registrado correctamente.');
+        // Limpiar y cerrar modal
+        setProductoSeleccionado(null);
+        setNuevoConteo('');
+        setModalVisible(false);
 
-      } catch (error) {
-          console.log('Error al agregar Producto:', error);
-          Alert.alert('Error', 'No se pudo agregar el Producto. Revisa el servidor.');
-      }
-  };
+        // Mensaje según plataforma
+        if (Platform.OS === 'web') {
+            window.alert('Éxito: Ingreso registrado correctamente.');
+        } else {
+            Alert.alert('Éxito', 'Ingreso registrado correctamente.');
+        }
+
+    } catch (error) {
+        console.log('ERROR AL INGRESAR PRODUCTO:', error);
+
+        if (Platform.OS === 'web') {
+            window.alert('Error: No se pudo registrar el ingreso.');
+        } else {
+            Alert.alert('Error', 'No se pudo registrar el ingreso.');
+        }
+    }
+};
+
+
 
 
 

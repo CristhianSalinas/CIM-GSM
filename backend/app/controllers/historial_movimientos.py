@@ -1,13 +1,71 @@
 from sqlalchemy.orm import Session
 from app.models.historial_movimientos import Movimientos
+from app.schemas.historial_movimientos import MovimientosCrear, MovimientoInventarioCrear
+
+from app.models.detalle_inventario import DetalleInventario
+
 from app.models.producto import Producto
+from app.models.usuario import Usuario
 from app.models.detalle_pedido import DetallePedido
-from app.schemas.historial_movimientos import MovimientosCrear
+
 from app.models.pedido import Pedido
+
+
 
 
 def obtener_movimientos(db: Session):
     return db.query(Movimientos).all()
+
+
+def obtener_historial(db: Session):
+
+    movimientos = (
+        db.query(
+            Movimientos.id,
+            Movimientos.id_movimentos,
+            Movimientos.id_usuario,
+            Movimientos.id_producto,
+            Movimientos.fecha,
+            Movimientos.observacion,
+            Movimientos.id_pedido,
+            Movimientos.id_estado,
+            Movimientos.cantidad,
+            Movimientos.id_inventario,
+            Producto.nombre.label("producto"),
+            Producto.codigo_sm,
+            Usuario.nombre.label("usuario")
+        )
+        .join(
+            Producto,
+            Producto.id_producto == Movimientos.id_producto
+        )
+        .join(
+            Usuario,
+            Usuario.id_usuario == Movimientos.id_usuario
+        )
+        .order_by(Movimientos.fecha.desc())
+        .all()
+    )
+
+    return [
+        {
+            "id": m.id,
+            "id_movimentos": m.id_movimentos,
+            "id_usuario": m.id_usuario,
+            "id_producto": m.id_producto,
+            "fecha": m.fecha,
+            "observacion": m.observacion,
+            "id_pedido": m.id_pedido,
+            "id_estado": m.id_estado,
+            "cantidad": m.cantidad,
+            "id_inventario": m.id_inventario,
+            "producto": m.producto,
+            "codigo_sm": m.codigo_sm,
+            "usuario": m.usuario
+        }
+        for m in movimientos
+    ]
+
 
 
 
@@ -93,9 +151,10 @@ def salida_movimientos(db: Session, datos: MovimientosCrear):
             id_usuario=datos.id_usuario,
             id_movimentos=datos.id_movimentos,
             id_pedido=datos.id_pedido,
-            id_cliente=pedido.id_cliente,
             id_producto=datos.id_producto,
+            id_estado=datos.id_estado,
             cantidad=datos.cantidad,
+            
             observacion=datos.observacion or ""
         )
 
@@ -201,10 +260,11 @@ def registrar_movimientos(db: Session, datos: MovimientosCrear):
             id_usuario=datos.id_usuario,
             id_movimentos=datos.id_movimentos,
             id_pedido=datos.id_pedido,
-            id_cliente=pedido.id_cliente,
             id_producto=datos.id_producto,
+            id_estado=datos.id_estado,
             cantidad=datos.cantidad,
-            observacion=datos.observacion or ""
+            observacion=datos.observacion or "",
+            id_inventario=datos.id_inventario,
         )
 
         db.add(nuevo_inventario)
@@ -213,6 +273,66 @@ def registrar_movimientos(db: Session, datos: MovimientosCrear):
         db.refresh(nuevo_inventario)
 
         return nuevo_inventario
+
+    except Exception:
+        db.rollback()
+        raise
+
+
+
+
+
+def registrar_conteo_inventario(
+    db: Session,
+    datos: MovimientoInventarioCrear
+):
+    try:
+        # Buscar el detalle del producto dentro del inventario
+        detalle = db.query(DetalleInventario).filter(
+            DetalleInventario.id_inventario == datos.id_inventario,
+            DetalleInventario.id_producto == datos.id_producto
+        ).with_for_update().first()
+
+        if not detalle:
+            raise ValueError(
+                "No existe este producto dentro del inventario."
+            )
+
+        # Evitar registrar nuevamente un producto ya contado
+        # si el inventario ya está finalizado
+        if detalle.id_estado == 1:
+            raise ValueError("Este producto ya fue contado.")
+
+        # Actualizar el detalle existente
+        diferencia = datos.cantidad - detalle.cantidad_anterior
+
+        detalle.cantidad_contada = datos.cantidad
+        detalle.diferencia = diferencia
+        detalle.id_estado = 1
+        detalle.observacion = datos.observacion
+
+        # Registrar historial
+        movimiento = Movimientos(
+            id_usuario=datos.id_usuario,
+            id_movimentos=3,
+            id_pedido=None,
+            id_producto=datos.id_producto,
+            id_estado=1,
+            id_inventario=datos.id_inventario,
+            cantidad=datos.cantidad,
+            observacion=datos.observacion or "Conteo de inventario"
+        )
+
+        db.add(movimiento)
+        db.commit()
+        db.refresh(movimiento)
+
+        return {
+            "mensaje": "Conteo registrado correctamente.",
+            "cantidad": datos.cantidad,
+            "diferencia": diferencia,
+            "id_producto": datos.id_producto
+        }
 
     except Exception:
         db.rollback()

@@ -1,6 +1,4 @@
-
 import React, { useEffect, useState } from 'react';
-import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
 import {
     View,
     Text,
@@ -13,57 +11,42 @@ import {
     ActivityIndicator
 } from 'react-native';
 import { useRouter } from 'expo-router';
-
 import { API_URL } from '../../../constants/api';
+import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
+import { obtenerToken, tokenExpirado, eliminarToken } from '../../../constants/auth';
+import { useUsuarioActual } from '../../../hooks/useUsuarioActual';
 
-
-interface Cliente {
-    id_cliente: number;
-    nombre?: string;
-    razon_social?: string;
+interface Categoria {
+    id_categoria: number;
+    nombre: string;
 }
 
 interface Producto {
     id_producto: number;
     codigo_sm: string;
     nombre: string;
+    id_categoria: number;
     cantidad_fisica: number;
 }
 
-interface ProductoSeleccionado {
-    id_producto: number;
-    nombre: string;
-    cantidad: number;
-}
 
-export default function CrearPedido() {
 
-    
-    
-    const [busquedaProducto, setBusquedaProducto] = useState('');
-    const [resultadosProductos, setResultadosProductos] = useState<Producto[]>([]);
-    const [mostrarClientes, setMostrarClientes] = useState(false);
+export default function CrearSalida() {
     const router = useRouter();
-    const [clientes, setClientes] = useState<Cliente[]>([]);
+    const [categorias, setCategorias] = useState<Categoria[]>([]);
     const [productos, setProductos] = useState<Producto[]>([]);
+    const [productosCategoria, setProductosCategoria] = useState<Producto[]>([]);
 
-
-
-    const [clienteSeleccionado, setClienteSeleccionado] =
-        useState<number | null>(null);
-
-    const [productoSeleccionado, setProductoSeleccionado] =
-        useState<Producto | null>(null);
-
-    const [cantidad, setCantidad] = useState('1');
-
-    const [listaProductos, setListaProductos] =
-        useState<ProductoSeleccionado[]>([]);
+    const [categoriaSeleccionada, setCategoriaSeleccionada] = useState<number | null>(null);
+    const [mostrarCategorias, setMostrarCategorias] = useState(false);
 
     const [cargando, setCargando] = useState(false);
     const [guardando, setGuardando] = useState(false);
 
-    // Cargar clientes y productos
+     const {usuarioActual} = useUsuarioActual();
+
+    const id_movimiento_inventario = 3;
+
     useEffect(() => {
         cargarDatos();
     }, []);
@@ -72,31 +55,65 @@ export default function CrearPedido() {
         try {
             setCargando(true);
 
-            const [respuestaClientes, respuestaProductos] =
-                await Promise.all([
-                    fetch(`${API_URL}/api/clientes/`),
-                    fetch(`${API_URL}/api/productos/`)
-                ]);
+            const token = await obtenerToken();
 
-            if (!respuestaClientes.ok || !respuestaProductos.ok) {
-                throw new Error('No se pudieron cargar los datos.');
+            if (!token) throw new Error('No hay token de autenticación.');
+
+            if (tokenExpirado(token)) {
+                await eliminarToken();
+                throw new Error('Tu sesión ha expirado.');
             }
 
-            const datosClientes = await respuestaClientes.json();
+            const [respuestaCategorias, respuestaProductos] = await Promise.all([
+                fetch(`${API_URL}/api/Categorias/`, {
+                    headers: { Authorization: `Bearer ${token}` }
+                }),
+
+                fetch(`${API_URL}/api/productos/`, {
+                    headers: { Authorization: `Bearer ${token}` }
+                })
+            ]);
+
+            if (!respuestaCategorias.ok || !respuestaProductos.ok) {
+                throw new Error('Error consultando categorías o productos.');
+            }
+
+            const datosCategorias = await respuestaCategorias.json();
             const datosProductos = await respuestaProductos.json();
 
-            setClientes(datosClientes);
+            setCategorias(datosCategorias);
             setProductos(datosProductos);
 
         } catch (error) {
-            console.error(error);
-            Alert.alert('Error', 'No se pudieron cargar clientes y productos.');
+            console.error('ERROR CARGANDO DATOS:', error);
+
+            Alert.alert(
+                'Error',
+                error instanceof Error ? error.message : 'Error cargando información.'
+            );
         } finally {
             setCargando(false);
         }
     };
 
-    const mostrarMensaje = (titulo: string, mensaje: string) => {
+    const seleccionarCategoria = (id_categoria: number) => {
+
+            setCategoriaSeleccionada(id_categoria);
+
+            const productosEncontrados = productos.filter(
+                producto =>
+                    Number(producto.id_categoria) === Number(id_categoria)
+            );
+
+            setProductosCategoria(productosEncontrados);
+
+            setMostrarCategorias(false);
+
+            console.log('Categoría seleccionada:', id_categoria);
+            console.log('Productos encontrados:', productosEncontrados);
+        };
+
+        const mostrarMensaje = (titulo: string, mensaje: string) => {
             if (Platform.OS === 'web') {
                 window.alert(`${titulo}\n\n${mensaje}`);
             } else {
@@ -104,292 +121,212 @@ export default function CrearPedido() {
             }
         };
 
-    const buscarProductos = async (texto: string) => {
-    setBusquedaProducto(texto);
+        const crearInventario = async () => {
 
-    if (texto.trim().length < 2) {
-        setResultadosProductos([]);
+    if (!categoriaSeleccionada) {
+        mostrarMensaje('Atención', 'Selecciona una categoría.');
+        return;
+    }
+
+    if (productosCategoria.length === 0) {
+        mostrarMensaje('Atención', 'Esta categoría no tiene productos.');
+        return;
+    }
+
+    if (!usuarioActual?.id_usuario) {
+        mostrarMensaje('Error', 'No se pudo identificar al usuario.');
         return;
     }
 
     try {
-        const url = `${API_URL}/api/pedidos/buscar?busqueda=${encodeURIComponent(texto)}`;
+        setGuardando(true);
 
-        console.log('URL CONSULTADA:', url);
+        const token = await obtenerToken();
 
-        const respuesta = await fetch(url);
+        if (!token) {
+            throw new Error('No hay token de autenticación.');
+        }
 
-        const contenido = await respuesta.text();
+        if (tokenExpirado(token)) {
+            await eliminarToken();
+            throw new Error('Tu sesión ha expirado.');
+        }
 
-        console.log('ESTADO HTTP:', respuesta.status);
-        console.log('RESPUESTA API:', contenido);
+        const datos = {
+            id_usuario: usuarioActual.id_usuario,
+            id_categoria: categoriaSeleccionada,
+            observacion: '',
+            productos: productosCategoria.map(producto => ({
+                id_producto: producto.id_producto
+            }))
+        };
+
+        console.log('DATOS PARA CREAR INVENTARIO:', datos);
+
+        const respuesta = await fetch(
+            `${API_URL}/api/inventarios/enviar`,
+            {
+                method: 'POST',
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(datos)
+            }
+        );
+
+        const resultado = await respuesta.json();
 
         if (!respuesta.ok) {
             throw new Error(
-                `Error HTTP ${respuesta.status}: ${contenido}`
+                resultado.detail || 'No se pudo crear el inventario.'
             );
         }
 
-        const datos = JSON.parse(contenido);
-        setResultadosProductos(datos);
+        mostrarMensaje(
+            'Inventario creado correctamente',
+            `Inventario N.º ${resultado.id_inventario}`
+        );
+
+        router.back();
 
     } catch (error) {
-        console.error('ERROR BUSCANDO PRODUCTOS:', error);
-        setResultadosProductos([]);
+
+        console.error('ERROR CREANDO INVENTARIO:', error);
+
+        mostrarMensaje(
+            'Error',
+            error instanceof Error
+                ? error.message
+                : 'Error al crear el inventario.'
+        );
+
+    } finally {
+        setGuardando(false);
     }
 };
 
-    // Agregar producto a la lista
-    const agregarProducto = () => {
-
-        if (!productoSeleccionado) {
-            Alert.alert('Atención', 'Selecciona un producto.');
-            return;
-        }
-
-        const cantidadNumerica = Number(cantidad);
-
-        if (
-            !Number.isInteger(cantidadNumerica) ||
-            cantidadNumerica <= 0
-        ) {
-            Alert.alert('Atención', 'Ingresa una cantidad entera mayor que cero.');
-            return;
-        }
-
-        setListaProductos(actual => [
-            ...actual,
-            {
-                id_producto: productoSeleccionado.id_producto,
-                nombre: productoSeleccionado.nombre,
-                cantidad: cantidadNumerica
-            }
-        ]);
-
-        setProductoSeleccionado(null);
-        setCantidad('1');
-    };
-
-    // Eliminar producto de la lista
-    const eliminarProducto = (indice: number) => {
-        setListaProductos(actual =>
-            actual.filter((_, i) => i !== indice)
-        );
-    };
-
-    // Guardar pedido
-   const guardarPedido = async () => {
-
-        console.log('INICIANDO REGISTRO DE PEDIDO');
-
-        console.log('CLIENTE:', clienteSeleccionado);
-        console.log('PRODUCTOS:', listaProductos);
-
-        if (!clienteSeleccionado) {
-            mostrarMensaje('Atención', 'Selecciona un cliente.');
-            return;
-        }
-
-        if (listaProductos.length === 0) {
-            mostrarMensaje('Atención', 'Agrega al menos un producto.');
-            return;
-        }
-
-        try {
-            setGuardando(true);
-
-            const datosPedido = {
-                id_cliente: clienteSeleccionado,
-                productos: listaProductos.map(item => ({
-                    id_producto: item.id_producto,
-                    cantidad: item.cantidad
-                }))
-            };
-
-            console.log('DATOS ENVIADOS:', datosPedido);
-
-            const respuesta = await fetch(`${API_URL}/api/pedidos/crear`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(datosPedido)
-            });
-
-            const contenido = await respuesta.text();
-
-            console.log('ESTADO HTTP:', respuesta.status);
-            console.log('RESPUESTA:', contenido);
-
-            const resultado = contenido ? JSON.parse(contenido) : {};
-
-            if (!respuesta.ok) {
-                throw new Error(
-                    resultado.detail || 'No se pudo crear el pedido.'
-                );
-            }
-
-            mostrarMensaje(
-                'Pedido creado correctamente',
-                `Número de pedido: ${resultado.numero_pedido}`
-            );
-
-            router.back();
-
-        } catch (error: any) {
-
-            console.error('ERROR AL GUARDAR PEDIDO:', error);
-
-            mostrarMensaje(
-                'Error',
-                error.message || 'No se pudo registrar el pedido.'
-            );
-
-        } finally {
-            setGuardando(false);
-        }
-    };
+   
 
     if (cargando) {
         return (
             <View style={styles.cargando}>
-                <ActivityIndicator size="large" color="#2563eb" />
-                <Text>Cargando información...</Text>
+                <ActivityIndicator size="large" color="#4F46E5" />
+                <Text style={styles.cargandoTexto}>Cargando información...</Text>
             </View>
         );
     }
 
     return (
         <SafeAreaProvider>
-              <SafeAreaView style={styles.safeArea}>
-                    <ScrollView style={styles.contenedor}>
+            <SafeAreaView style={styles.safeArea} edges={['top']}>
+                <ScrollView contentContainerStyle={styles.contenedor} showsVerticalScrollIndicator={false}>
+                    
+                    {/* ENCABEZADO */}
+                    <View style={styles.headerContainer}>
+                        <Text style={styles.titulo}>Crear Salida</Text>
+                        <Text style={styles.subtitulo}>Registra la salida de inventario para un cliente</Text>
+                    </View>
 
-                        <Text style={styles.titulo}>Crear pedido</Text>
+                    <View style={styles.card}>
 
-                        <Text style={styles.etiqueta}>Cliente</Text>
+                    <Text style={styles.seccionTitulo}>
+                        1. Seleccionar categoría
+                    </Text>
 
-                                <Pressable
-                                    style={styles.input}
-                                    onPress={() => setMostrarClientes(!mostrarClientes)}
-                                >
-                                    <Text>
-                                        {clientes.find(c => c.id_cliente === clienteSeleccionado)?.razon_social ||
-                                        clientes.find(c => c.id_cliente === clienteSeleccionado)?.nombre ||
-                                        'Seleccionar cliente'}
-                                    </Text>
-                                </Pressable>
+                    <Pressable
+                        style={styles.selectorInput}
+                        onPress={() => setMostrarCategorias(!mostrarCategorias)}
+                    >
+                        <Text style={styles.textoSeleccionado}>
+                            {categorias.find(
+                                c => c.id_categoria === categoriaSeleccionada
+                            )?.nombre || 'Seleccionar categoría...'}
+                        </Text>
 
-                                {mostrarClientes && clientes.map(cliente => (
+                        <Text>▼</Text>
+                    </Pressable>
+
+                   {mostrarCategorias && (
+                        <View style={styles.listaDesplegable}>
+
+                            <ScrollView
+                                style={{ maxHeight: 200 }}
+                                nestedScrollEnabled={true}
+                                showsVerticalScrollIndicator={true}
+                            >
+                                {categorias.map(categoria => (
                                     <Pressable
-                                        key={cliente.id_cliente}
+                                        key={categoria.id_categoria}
                                         style={styles.opcion}
-                                        onPress={() => {
-                                            setClienteSeleccionado(cliente.id_cliente);
-                                            setMostrarClientes(false);
-                                        }}
+                                        onPress={() =>
+                                            seleccionarCategoria(categoria.id_categoria)
+                                        }
                                     >
-                                        <Text>
-                                            {cliente.razon_social || cliente.nombre ||
-                                            `Cliente ${cliente.id_cliente}`}
+                                        <Text style={styles.nombreOpcion}>
+                                            {categoria.nombre}
                                         </Text>
                                     </Pressable>
                                 ))}
+                            </ScrollView>
 
-                        {/* Seleccionar producto */}
-                        <Text style={styles.etiqueta}>Buscar producto</Text>
+                        </View>
+                    )}
 
-                            <TextInput
-                                style={styles.input}
-                                placeholder="Buscar por código SM o nombre"
-                                value={busquedaProducto}
-                                onChangeText={buscarProductos}
-                            />
+                </View>
 
-                            {resultadosProductos.map(producto => (
-                                <Pressable
-                                    key={producto.id_producto}
-                                    style={styles.opcion}
-                                    onPress={() => {
-                                        setProductoSeleccionado(producto);
-                                        setBusquedaProducto(
-                                            `${producto.codigo_sm} - ${producto.nombre}`
-                                        );
-                                        setResultadosProductos([]);
-                                    }}
-                                >
-                                    <Text style={styles.nombreProducto}>
-                                        {producto.codigo_sm} - {producto.nombre}
-                                    </Text>
-                                    <Text style={styles.secundario}>
-                                        Existencias: {producto.cantidad_fisica}
-                                    </Text>
-                                </Pressable>
-                            ))}
+                <View style={styles.card}>
 
-                        {/* Cantidad */}
-                        <Text style={styles.etiqueta}>Cantidad solicitada</Text>
+                    <Text style={styles.seccionTitulo}>
+                        2. Productos encontrados
+                    </Text>
 
-                        <TextInput
-                            style={styles.input}
-                            value={cantidad}
-                            onChangeText={setCantidad}
-                            keyboardType="numeric"
-                            placeholder="Ingrese la cantidad"
-                        />
+                    <Text style={styles.secundario}>
+                        Total de productos: {productosCategoria.length}
+                    </Text>
 
-                        <Pressable
-                            style={styles.botonAgregar}
-                            onPress={agregarProducto}
+                    {productosCategoria.map(producto => (
+                        <View
+                            key={producto.id_producto}
+                            style={styles.productoAgregado}
                         >
-                            <Text style={styles.textoBoton}>
-                                + Agregar producto
-                            </Text>
-                        </Pressable>
+                            <View style={{ flex: 1 }}>
+                                <Text style={styles.nombreProductoItem}>
+                                    {producto.nombre}
+                                </Text>
 
-                        {/* Lista de productos */}
-                        <Text style={styles.etiqueta}>Productos del pedido</Text>
-
-                        {listaProductos.map((item, indice) => (
-                            <View key={indice} style={styles.productoAgregado}>
-                                <View style={{ flex: 1 }}>
-                                    <Text style={styles.nombreProducto}>
-                                        {item.nombre}
-                                    </Text>
-                                    <Text style={styles.secundario}>
-                                        Cantidad: {item.cantidad}
-                                    </Text>
-                                </View>
-
-                                <Pressable
-                                    onPress={() => eliminarProducto(indice)}
-                                >
-                                    <Text style={styles.eliminar}>Eliminar</Text>
-                                </Pressable>
+                                <Text style={styles.secundario}>
+                                    Código: {producto.codigo_sm || 'Sin código'}
+                                </Text>
                             </View>
-                        ))}
+                        </View>
+                    ))}
 
-                        {/* Guardar */}
-                        <Pressable
-                            style={[
-                                styles.botonGuardar,
-                                guardando && { opacity: 0.6 }
-                            ]}
-                            onPress={guardarPedido}
-                            disabled={guardando}
-                        >
-                            <Text style={styles.textoBoton}>
-                                {guardando ? 'Guardando...' : 'Guardar pedido'}
-                            </Text>
-                        </Pressable>
+                </View>
 
-                        <Pressable
-                            style={styles.botonCancelar}
-                            onPress={() => router.back()}
-                        >
+                <Pressable
+                    style={styles.botonGuardar}
+                    onPress={crearInventario}
+                    disabled={guardando}
+                >
+                    {guardando ? (
+                        <ActivityIndicator color="#FFFFFF" />
+                    ) : (
+                        <Text style={styles.textoBoton}>
+                            CREAR INVENTARIO
+                        </Text>
+                    )}
+                </Pressable>
+
+                    {/* BOTONES FINALES */}
+                    <View style={styles.accionesContainer}>
+
+                        <Pressable style={styles.botonCancelar} onPress={() => router.back()} disabled={guardando}>
                             <Text style={styles.textoCancelar}>Cancelar</Text>
                         </Pressable>
+                    </View>
 
-                    </ScrollView>
+                </ScrollView>
             </SafeAreaView>
         </SafeAreaProvider>
     );
@@ -397,115 +334,258 @@ export default function CrearPedido() {
 
 const styles = StyleSheet.create({
     safeArea: {
-    flex: 1,
-    backgroundColor: '#F9FAFB',
-  },
-    contenedor: {
         flex: 1,
-        backgroundColor: '#f5f6fa',
-        padding: 16
+        backgroundColor: '#F1F5F9',
     },
-
+    contenedor: {
+        padding: 16,
+        paddingBottom: 40,
+    },
+    headerContainer: {
+        marginBottom: 16,
+    },
     titulo: {
         fontSize: 24,
-        fontWeight: 'bold',
-        marginBottom: 20,
-        color: '#172033'
+        fontWeight: '800',
+        color: '#0F172A',
+        letterSpacing: -0.5,
     },
-
-    etiqueta: {
-        fontSize: 16,
-        fontWeight: 'bold',
-        marginTop: 18,
-        marginBottom: 10,
-        color: '#172033'
-    },
-
-    opcion: {
-        backgroundColor: '#fff',
-        padding: 13,
-        borderRadius: 8,
-        marginBottom: 8,
-        borderWidth: 1,
-        borderColor: '#ddd'
-    },
-
-    seleccionado: {
-        borderColor: '#2563eb',
-        backgroundColor: '#eff6ff'
-    },
-
-    nombreProducto: {
-        fontWeight: '600',
-        color: '#172033'
-    },
-
-    secundario: {
-        color: '#666',
+    subtitulo: {
         fontSize: 13,
-        marginTop: 4
+        color: '#64748B',
+        marginTop: 4,
     },
-
-    input: {
-        backgroundColor: '#fff',
+    card: {
+        backgroundColor: '#FFFFFF',
+        borderRadius: 12,
+        padding: 16,
+        marginBottom: 16,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.05,
+        shadowRadius: 3,
+        elevation: 2,
         borderWidth: 1,
-        borderColor: '#ccc',
-        borderRadius: 8,
-        padding: 12,
-        fontSize: 16
+        borderColor: '#E2E8F0',
     },
-
+    seccionTitulo: {
+        fontSize: 15,
+        fontWeight: '700',
+        color: '#1E293B',
+        marginBottom: 12,
+    },
+    headerListaProd: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        marginBottom: 12,
+    },
+    seccionTitleInline: {
+        fontSize: 15,
+        fontWeight: '700',
+        color: '#1E293B',
+    },
+    badgeCount: {
+        backgroundColor: '#EEF2FF',
+        paddingHorizontal: 8,
+        paddingVertical: 2,
+        borderRadius: 10,
+    },
+    badgeCountText: {
+        color: '#4F46E5',
+        fontSize: 12,
+        fontWeight: '700',
+    },
+    etiqueta: {
+        fontSize: 12,
+        fontWeight: '600',
+        color: '#475569',
+        marginTop: 10,
+        marginBottom: 6,
+    },
+    input: {
+        backgroundColor: '#F8FAFC',
+        borderWidth: 1,
+        borderColor: '#CBD5E1',
+        borderRadius: 8,
+        paddingHorizontal: 14,
+        height: 46,
+        fontSize: 14,
+        color: '#0F172A',
+    },
+    selectorInput: {
+        backgroundColor: '#F8FAFC',
+        borderWidth: 1,
+        borderColor: '#CBD5E1',
+        borderRadius: 8,
+        paddingHorizontal: 14,
+        height: 46,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+    },
+    flechaSelect: {
+        fontSize: 10,
+        color: '#64748B',
+    },
+    textoPlaceholder: {
+        color: '#94A3B8',
+        fontSize: 14,
+        flex: 1,
+    },
+    textoSeleccionado: {
+        color: '#0F172A',
+        fontSize: 14,
+        fontWeight: '600',
+        flex: 1,
+    },
+    listaDesplegable: {
+        marginTop: 6,
+        backgroundColor: '#FFFFFF',
+        borderWidth: 1,
+        borderColor: '#CBD5E1',
+        borderRadius: 8,
+        maxHeight: 200,
+        overflow: 'hidden',
+        elevation: 4,
+        shadowColor: '#000',
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+    },
+    opcion: {
+        padding: 12,
+        borderBottomWidth: 1,
+        borderBottomColor: '#F1F5F9',
+    },
+    nombreOpcion: {
+        fontSize: 14,
+        fontWeight: '600',
+        color: '#1E293B',
+    },
+    nombreProducto: {
+        fontSize: 14,
+        fontWeight: '600',
+        color: '#1E293B',
+    },
+    secundario: {
+        color: '#64748B',
+        fontSize: 12,
+        marginTop: 2,
+    },
+    filaCantidad: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 10,
+    },
     botonAgregar: {
-        backgroundColor: '#2563eb',
-        padding: 14,
+        backgroundColor: '#4F46E5',
+        height: 46,
+        paddingHorizontal: 20,
         borderRadius: 8,
         alignItems: 'center',
-        marginTop: 12
+        justifyContent: 'center',
     },
-
+    textoBotonAgregar: {
+        color: '#FFFFFF',
+        fontWeight: '700',
+        fontSize: 13,
+    },
+    vacioContenedor: {
+        padding: 24,
+        backgroundColor: '#F8FAFC',
+        borderRadius: 8,
+        borderWidth: 1,
+        borderColor: '#E2E8F0',
+        alignItems: 'center',
+        borderStyle: 'dashed',
+    },
+    vacioTexto: {
+        fontSize: 13,
+        color: '#94A3B8',
+    },
     productoAgregado: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#fff',
-        padding: 13,
+        backgroundColor: '#F8FAFC',
+        padding: 12,
         borderRadius: 8,
-        marginBottom: 8
+        marginTop: 8,
+        borderWidth: 1,
+        borderColor: '#E2E8F0',
     },
-
+    nombreProductoItem: {
+        fontSize: 14,
+        fontWeight: '700',
+        color: '#1E293B',
+    },
+    detallesItemRow: {
+        flexDirection: 'row',
+        gap: 12,
+        marginTop: 4,
+    },
+    tagCodigo: {
+        fontSize: 12,
+        color: '#64748B',
+    },
+    tagCantidad: {
+        fontSize: 12,
+        color: '#4F46E5',
+        fontWeight: '600',
+    },
+    btnEliminarContainer: {
+        paddingLeft: 12,
+        paddingVertical: 6,
+    },
     eliminar: {
-        color: '#dc2626',
-        fontWeight: 'bold'
+        color: '#EF4444',
+        fontWeight: '700',
+        fontSize: 12,
     },
-
+    accionesContainer: {
+        marginTop: 8,
+    },
     botonGuardar: {
-        backgroundColor: '#16a34a',
-        padding: 16,
+        backgroundColor: '#0F172A',
+        height: 50,
         borderRadius: 8,
         alignItems: 'center',
-        marginTop: 25
+        justifyContent: 'center',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 3,
     },
-
+    botonDeshabilitado: {
+        opacity: 0.6,
+    },
     textoBoton: {
-        color: '#fff',
-        fontWeight: 'bold',
-        fontSize: 16
+        color: '#FFFFFF',
+        fontWeight: '800',
+        fontSize: 14,
+        letterSpacing: 0.8,
     },
-
     botonCancelar: {
-        padding: 14,
+        height: 44,
         alignItems: 'center',
-        marginBottom: 30
+        justifyContent: 'center',
+        marginTop: 10,
     },
-
     textoCancelar: {
-        color: '#555',
-        fontWeight: '600'
+        color: '#64748B',
+        fontWeight: '600',
+        fontSize: 13,
     },
-
     cargando: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        gap: 10
+        backgroundColor: '#F8FAFC',
+        gap: 12,
+    },
+    cargandoTexto: {
+        color: '#64748B',
+        fontSize: 14,
+        fontWeight: '500',
     }
 });

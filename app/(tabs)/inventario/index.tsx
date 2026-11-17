@@ -20,6 +20,7 @@ import BotonInicio from '../../../componentes/botones/boton_inicio';
 import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
 import { API_URL } from '../../../constants/api';
 import { obtenerToken, tokenExpirado, eliminarToken } from '../../../constants/auth';
+import { useUsuarioActual } from '../../../hooks/useUsuarioActual';
 
 const cerrarSesion = async () => {
     await eliminarToken();
@@ -29,6 +30,8 @@ const cerrarSesion = async () => {
 const inventarios = () => {
     router.push('/inventario/inventarios');
   };
+
+  
 
 interface Producto {
     id_producto: number;
@@ -73,6 +76,8 @@ export default function Conteo() {
 
     const [filtroStock, setFiltroStock] =
         useState<'todos' | 'bajo' | 'agotados'>('todos');
+
+     const { usuarioActual } = useUsuarioActual();
 
     // CARGAR PRODUCTOS
 
@@ -307,25 +312,29 @@ export default function Conteo() {
                         contentContainerStyle={styles.scrollContent}
                         keyboardShouldPersistTaps="handled"
                     >
-
+                        
+                        
                         <View style={estilos.contenido}>
+                            {(Number(usuarioActual?.id_rol) === 1 || Number(usuarioActual?.id_rol) === 2)  && (
+                            <>
+                                {/* NAVEGACIÓN */}
 
-                            {/* NAVEGACIÓN */}
+                                    <View style={styles.navegacion}>
+                                        <BotonInicio />
 
-                            <View style={styles.navegacion}>
-                                <BotonInicio />
-
-                                <Pressable
-                                    style={({ pressed }) => [
-                                        styles.botonCrear,
-                                        pressed && { opacity: 0.8 }
-                                    ]}
-                                    onPress={inventarios}
-                                    >
-                                    <Text style={styles.botonCrearTexto}> inventarios</Text>
-                                    </Pressable>
-                            </View>
-
+                                        <Pressable
+                                            style={({ pressed }) => [
+                                                styles.botonCrear,
+                                                pressed && { opacity: 0.8 }
+                                            ]}
+                                            onPress={inventarios}
+                                            >
+                                            <Text style={styles.botonCrearTexto}> inventarios</Text>
+                                            </Pressable>
+                                    </View>          
+                        </>
+                        )}   
+                             
                             {/* ENCABEZADO */}
 
                             <View style={styles.header}>

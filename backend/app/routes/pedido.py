@@ -10,7 +10,8 @@ from app.controllers.pedido import (
     finalizar_pedido,
     obtener_estado_pedido,
     crear_pedido, 
-    buscar_productos)
+    buscar_productos,
+    obtener_pedidos_conteo)
 
 
 
@@ -34,6 +35,11 @@ def listar_pedidos(db: Session = Depends(get_db)):
     return obtener_pedidos(db)
 
 
+@router.get("/conteo")
+def contar_pedidos(
+    db: Session = Depends(get_db)
+):
+    return obtener_pedidos_conteo(db)
 
 
 @router.get("/{id_pedido}/productos")

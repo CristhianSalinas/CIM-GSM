@@ -19,6 +19,6 @@ def listar_clientes(db: Session = Depends(get_db)):
     return obtener_cliente(db)
 
 #registrar un nuevo cliente
-@router.post("/", response_model=ClienteRespuesta)
+@router.post("/crear", response_model=ClienteRespuesta)
 def registrar_cliente(datos: ClienteCrear, db: Session = Depends(get_db)):
     return crear_cliente(db, datos)

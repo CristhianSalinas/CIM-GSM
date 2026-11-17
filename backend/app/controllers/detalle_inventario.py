@@ -1,68 +1,65 @@
+
 from sqlalchemy.orm import Session
 
 from app.models.detalle_inventario import DetalleInventario
 from app.models.inventarios import Inventarios
-from app.models.producto import Producto
-from app.models.estado import Estado
-
 from app.schemas.detalle_inventario import DetalleInventarioCrear
 
 
-# REGISTRAR DETALLE DE INVENTARIO
+# REGISTRAR O ACTUALIZAR CONTEO DE INVENTARIO
 def registrar_detalle_inventario(
     db: Session,
     datos: DetalleInventarioCrear
 ):
-
     try:
-        # Validar que exista el inventario
+        # 1. Validar que exista el inventario y bloquear su registro
         inventario = db.query(Inventarios).filter(
             Inventarios.id_inventario == datos.id_inventario
-        ).first()
+        ).with_for_update().first()
 
         if not inventario:
             raise ValueError("El inventario no existe.")
 
-        # Validar que el Producto exista
-        producto = db.query(Producto).filter(
-            Producto.id_producto == datos.id_producto
-        ).first()
 
-        if not producto:
-            raise ValueError("El producto no existe.")
+        # 3. Validar la cantidad ingresada
+        if datos.cantidad_contada is None:
+            raise ValueError("Debes ingresar la cantidad contada.")
 
-        # Validar que exista el producto
-        estado = db.query(Estado).filter(
-            Estado.id_estado == datos.id_estado
-        ).first()
+        if datos.cantidad_contada < 0:
+            raise ValueError("La cantidad no puede ser negativa.")
 
-        if not estado:
-            raise ValueError("El estado no existe.")
+        # 4. Buscar el detalle previamente creado
+        detalle = db.query(DetalleInventario).filter(
+            DetalleInventario.id_inventario == datos.id_inventario,
+            DetalleInventario.id_producto == datos.id_producto
+        ).with_for_update().first()
 
-        # Calcular diferencia
-        diferencia = (
-            datos.cantidad_actual - datos.cantidad_anterior
+        if not detalle:
+            raise ValueError(
+                "El producto no pertenece a este inventario."
+            )
+
+        # 5. Actualizar el conteo existente
+        detalle.cantidad_contada = datos.cantidad_contada
+
+        # Diferencia entre cantidad contada y cantidad anterior
+        detalle.diferencia = (
+            datos.cantidad_contada - detalle.cantidad_anterior
         )
 
-        # Crear registro
-        nuevo_detalle = DetalleInventario(
-            id_inventario=datos.id_inventario,
-            id_producto=datos.id_producto,
-            cantidad_anterior=datos.cantidad_anterior,
-            cantidad_actual=datos.cantidad_actual,
-            diferencia=diferencia,
-            observacion=datos.observacion,
-            id_estado=datos.id_estado
-        )
+        # Estado 1 = Completado / Contado
+        detalle.id_estado = 1
 
-        db.add(nuevo_detalle)
+        detalle.observacion = datos.observacion
+
+        # Primer conteo: pasar inventario de pendiente a en progreso.
+        if inventario.id_estado == 2:
+            inventario.id_estado = 3
+
         db.commit()
-        db.refresh(nuevo_detalle)
+        db.refresh(detalle)
 
-        return nuevo_detalle
-
-    except ValueError:
-        raise
+        return detalle
 
     except Exception:
         db.rollback()
@@ -93,6 +90,6 @@ def obtener_detalle_por_id(
 ):
 
     return db.query(DetalleInventario).filter(
-        DetalleInventario.id_detalle_inventario
+        DetalleInventario.id_detalles_inventario
         == id_detalle_inventario
     ).first()
