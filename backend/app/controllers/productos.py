@@ -1,12 +1,22 @@
 from sqlalchemy.orm import Session
+from sqlalchemy import func, or_
+
 from app.models.producto import Producto
-from sqlalchemy import func
 
 
-def obtener_productos(db: Session):
-    return db.query(Producto).all()
+def obtener_productos(db: Session, busqueda: str):
+    termino = f"%{busqueda.strip()}%"
+
+    return db.query(Producto).filter(
+        or_(
+            Producto.codigo_sm.ilike(termino),
+            Producto.nombre.ilike(termino)
+        )
+    ).limit(50).all()
+
 
 def obtener_estadisticas_productos(db: Session):
+
     total_productos = db.query(
         func.count(Producto.id_producto)
     ).scalar() or 0
@@ -26,7 +36,6 @@ def obtener_estadisticas_productos(db: Session):
 
     return {
         "total_productos": total_productos,
-        "Stock_Bajo" : productos_sin_stock,
-        "Agotados" : agotados
+        "Stock_Bajo": productos_sin_stock,
+        "Agotados": agotados
     }
-

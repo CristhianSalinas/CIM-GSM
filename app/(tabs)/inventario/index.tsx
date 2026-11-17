@@ -15,7 +15,7 @@ import {
 
 
 import { router } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import BotonInicio from '../../../componentes/botones/boton_inicio';
 import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
 import { API_URL } from '../../../constants/api';
@@ -63,6 +63,9 @@ export default function Conteo() {
     const [productos, setProductos] = useState<Producto[]>([]);
     const [busqueda, setBusqueda] = useState('');
 
+    const [buscando, setBuscando] = useState(false);
+    const [busquedaRealizada, setBusquedaRealizada] = useState(false);
+
     const [estadisticas, setEstadisticas] = useState<Estadisticas>({
         total_productos: 0,
         Stock_Bajo: 0,
@@ -83,34 +86,46 @@ export default function Conteo() {
 
    
     // CARGAR PRODUCTOS
-    const cargarProductos = async () => {
+    
+    const buscarProductos = useCallback(async (termino: string) => {
         try {
+            setBuscando(true);
+
             const token = await obtenerToken();
 
             if (!token) {
-                throw new Error('No hay sesión activa. Inicia sesión nuevamente.');
-                
+                throw new Error('No hay sesión activa.');
             }
 
-            const respuesta = await fetch(`${API_URL}/api/productos/`, {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`,
-                },
-            });
+            const respuesta = await fetch(
+                `${API_URL}/api/productos/?busqueda=${encodeURIComponent(termino)}`,
+                {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        Authorization: `Bearer ${token}`,
+                    },
+                }
+            );
 
             if (!respuesta.ok) {
                 throw new Error(`Error HTTP: ${respuesta.status}`);
             }
 
             const datos = await respuesta.json();
-            setProductos(datos);
+
+            setProductos(Array.isArray(datos) ? datos : []);
+            setBusquedaRealizada(true);
 
         } catch (error) {
-            console.log('Error al cargar productos:', error);
+            console.log('Error buscando productos:', error);
+            setProductos([]);
+        } finally {
+            setBuscando(false);
         }
-    };
+    }, []);
+
+
 
     const cargarEstadisticas = async () => {
     try {
@@ -201,7 +216,10 @@ export default function Conteo() {
 
             await respuesta.json();
 
-            await cargarProductos();
+            if (busqueda.trim().length >= 2) {
+                await buscarProductos(busqueda.trim());
+            }
+
             await cargarEstadisticas();
 
             setProductoSeleccionado(null);
@@ -269,10 +287,29 @@ export default function Conteo() {
     });
 
     // CARGA INICIAL
-    useEffect(() => {
-        cargarProductos();
-        cargarEstadisticas();
-    }, []);
+        // Cargar únicamente estadísticas al entrar
+        useEffect(() => {
+            cargarEstadisticas();
+        }, []);
+
+        // Buscar productos cuando el usuario escriba
+        useEffect(() => {
+            const termino = busqueda.trim();
+
+            if (termino.length < 2) {
+                setProductos([]);
+                setBusquedaRealizada(false);
+                setBuscando(false);
+                return;
+            }
+
+            const tiempo = setTimeout(() => {
+                buscarProductos(termino);
+            }, 400);
+
+            return () => clearTimeout(tiempo);
+
+        }, [busqueda, buscarProductos]);
 
     // ESTILOS DINÁMICOS
     const estilos = {
