@@ -315,14 +315,14 @@ export default function Conteo() {
                         
                         
                         <View style={estilos.contenido}>
-                            {(Number(usuarioActual?.id_rol) === 1 || Number(usuarioActual?.id_rol) === 2)  && (
-                            <>
+                            
                                 {/* NAVEGACIÓN */}
 
                                     <View style={styles.navegacion}>
                                         <BotonInicio />
-
-                                        <Pressable
+                                        {(Number(usuarioActual?.id_rol) === 1 || Number(usuarioActual?.id_rol) === 2)  && (
+                                            <>
+                                            <Pressable
                                             style={({ pressed }) => [
                                                 styles.botonCrear,
                                                 pressed && { opacity: 0.8 }
@@ -331,9 +331,10 @@ export default function Conteo() {
                                             >
                                             <Text style={styles.botonCrearTexto}> inventarios</Text>
                                             </Pressable>
+                                            </>
+                                        )}  
                                     </View>          
-                        </>
-                        )}   
+                        
                              
                             {/* ENCABEZADO */}
 

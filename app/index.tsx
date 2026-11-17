@@ -63,7 +63,7 @@ export default function Index() {
             const token = await obtenerToken();
 
             const respuestainventario = await fetch(
-                `${API_URL}/api/inventarios/conteo/`,
+                `${API_URL}/api/inventarios/conteo`,
                 {
                     method: 'GET',
                     headers: {
@@ -82,7 +82,7 @@ export default function Index() {
             }
 
             const respuestapedidos = await fetch(
-                `${API_URL}/api/pedidos/conteo/`,
+                `${API_URL}/api/pedidos/conteo`,
                 {
                     method: 'GET',
                     headers: {

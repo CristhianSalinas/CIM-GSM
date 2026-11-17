@@ -136,12 +136,12 @@ export default function PedidosEntrada() {
         <SafeAreaProvider>
             <SafeAreaView style={styles.safeArea}>
                 <View style={styles.contenedor}>
-                    {(Number(usuarioActual?.id_rol) === 1 || Number(usuarioActual?.id_rol) === 2)  && (
-                            <>
+                    
                         {/* BARRA SUPERIOR: VOLVER + ACCIÓN PRINCIPAL */}
                         <View style={styles.topBar}>
                             <BotonVolver />
-
+                        {(Number(usuarioActual?.id_rol) === 1 || Number(usuarioActual?.id_rol) === 2)  && (
+                            <>
                             <Pressable
                                 style={({ pressed }) => [
                                     styles.botonCrear,
@@ -151,9 +151,10 @@ export default function PedidosEntrada() {
                             >
                                 <Text style={styles.botonCrearTexto}>+ Crear pedido</Text>
                             </Pressable>
+                            </>
+                        )}
                         </View>
-                     </>
-                        )}  
+                       
 
                     {/* HEADER */}
                     <View style={styles.header}>

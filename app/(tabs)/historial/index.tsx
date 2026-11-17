@@ -14,6 +14,7 @@ import {
 
 import { API_URL } from '../../../constants/api';
 import { obtenerToken } from '../../../constants/auth';
+import BotonInicio from '../../../componentes/botones/boton_inicio';
 
 // TIPOS
 interface Movimiento {
@@ -282,6 +283,9 @@ export default function Historial() {
 
     return (
         <View style={styles.contenedor}>
+            <View style={styles.navegacion}>
+                <BotonInicio />
+            </View>          
             {/* HEADER */}
             <View style={styles.header}>
                 <Text style={styles.titulo}>Historial de movimientos</Text>

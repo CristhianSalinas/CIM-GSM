@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, ScrollView, Alert, Pressable } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Alert, Pressable, Platform } from 'react-native';
 import React, { useState, useEffect } from 'react';
 import { useLocalSearchParams } from 'expo-router';
 import { DataTable } from 'react-native-paper';
@@ -8,6 +8,9 @@ import CustomModal from '../../../componentes/botones/ScreenModal';
 import BotonVolver from '../../../componentes/botones/boton_volver';
 import { API_URL } from '../../../constants/api';
 import { Producto } from '../../../types/Producto';
+import { obtenerToken } from '../../../constants/auth';
+import { useUsuarioActual } from '../../../hooks/useUsuarioActual';
+
 
 
 export default function Salida() {
@@ -19,6 +22,7 @@ export default function Salida() {
     const [modalVisible, setModalVisible] = useState(false);
     const [finalizado, setFinalizado] = useState(false);
 
+     const {usuarioActual} = useUsuarioActual();
     
     
     // Cálculo dinámico de inconsistencias (ej: cuando lo despachado es diferente a lo solicitado)
@@ -35,16 +39,16 @@ export default function Salida() {
   
           const productosAdaptados: Producto[] = resultado.map((item: any) => ({
             id_detalle: item.id_detalle,
-            id_producto: item.id_producto,
-            codigo_sm: item.codigo_sm,
-            nombre: item.nombre,
-            id_marca: item.id_marca,
-            referencia: item.referencia,
-            descripcion: item.descripcion,
-            precio: item.precio,
-            cantidad_fisica: item.cantidad_fisica ?? 0,
-            cantidad_despachada: item.cantidad_despachada ?? 0,
-            cantidad_solicitada: item.cantidad_solicitada ?? 0,
+                id_producto: item.id_producto,
+                codigo_sm: item.codigo_sm,
+                nombre: item.nombre,
+                id_marca: item.id_marca,
+                referencia: item.referencia,
+                descripcion: item.descripcion,
+                precio: item.precio,
+                cantidad_fisica: item.cantidad_fisica ?? 0,
+                cantidad_despachada: item.cantidad_despachada ?? 0,
+                cantidad_solicitada: item.cantidad_solicitada ?? 0,
         }));
   
           setDatos(productosAdaptados);
@@ -54,6 +58,7 @@ export default function Salida() {
     };
 
     const SalidaProducto = async () => {
+      const token = await obtenerToken();
           if (!productoSeleccionado) {
               Alert.alert('Atención', 'Selecciona un producto.');
               return;
@@ -82,52 +87,91 @@ export default function Salida() {
 
           try {
 
-              const respuesta = await fetch(
-                  `${API_URL}/api/historial_movimientos/salida`,
-                  {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({
-                          id_usuario: 1,
+              const token = await obtenerToken();
+                      const cantidad = Number(nuevoConteo);
+                      const idDetalle = Number(productoSeleccionado.id_detalle);
+              
+                      const cuerpo = {
+                          id_usuario: usuarioActual.id_usuario,
                           id_movimentos: 2,
+                          id_detalle: idDetalle,
                           id_pedido: Number(id_pedido),
                           id_producto: productoSeleccionado.id_producto,
-                          cantidad: cantidad,
+                          id_estado: 2,
+                          id_inventario: null,
+                          cantidad,
                           observacion: 'Salida de mercancía',
-                          id_detalle: productoSeleccionado.id_detalle
-                      })
+                      };
+              
+                      const respuesta = await fetch(
+                          `${API_URL}/api/historial_movimientos/registrar`,
+                          {
+                              method: 'POST',
+                              headers: {
+                                  Authorization: `Bearer ${token}`,
+                                  'Content-Type': 'application/json',
+                              },
+                              body: JSON.stringify(cuerpo),
+                          }
+                      );
+              
+                      const datosRespuesta = await respuesta.json();
+
+
+
+                      console.log('ESTADO HTTP:', respuesta.status);
+                    console.log('RESPUESTA FASTAPI:', datosRespuesta);
+
+                    if (!respuesta.ok) {
+                        throw new Error(JSON.stringify(datosRespuesta));
+                    }// Actualizar cantidades
+                      setDatos(prev => {
+                          console.log('DATOS ANTES DE ACTUALIZAR:', prev);
+                          console.log('ID DETALLE BUSCADO:', idDetalle);
+
+                          const nuevosDatos = prev.map(item => {
+                              if (Number(item.id_detalle) === idDetalle) {
+                                  console.log('PRODUCTO ACTUALIZADO:', item);
+
+                                  return {
+                                      ...item,
+                                      cantidad_despachada:
+                                          Number(item.cantidad_despachada || 0) + cantidad,
+                                      cantidad_fisica:
+                                          Number(item.cantidad_fisica || 0) + cantidad,
+                                  };
+                              }
+
+                              return item;
+                          });
+
+                          console.log('NUEVOS DATOS:', nuevosDatos);
+
+                          return nuevosDatos;
+                      });
+
+                      // Limpiar y cerrar modal
+                      setProductoSeleccionado(null);
+                      setNuevoConteo('');
+                      setModalVisible(false);
+
+                      // Mensaje según plataforma
+                      if (Platform.OS === 'web') {
+                          window.alert('Éxito: Salida registrada correctamente.');
+                      } else {
+                          Alert.alert('Éxito', 'Salida registrada correctamente.');
+                      }
+
+                  } catch (error) {
+                      console.log('ERROR AL INGRESAR PRODUCTO:', error);
+
+                      if (Platform.OS === 'web') {
+                          window.alert('Error: No se pudo registrar la Salida.');
+                      } else {
+                          Alert.alert('Error', 'No se pudo registrar Salida.');
+                      }
                   }
-              );
-
-
-          const resultado = await respuesta.json();
-
-            console.log("ESTADO:", respuesta.status);
-            console.log("ERROR FASTAPI:", resultado);
-
-              if (!respuesta.ok) throw new Error(resultado.detail || 'Error al registrar la salida.');
-
-              setDatos(prev =>
-                  prev.map(item =>
-                      item.id_detalle === productoSeleccionado.id_detalle
-                          ? {
-                              ...item,
-                              cantidad_despachada: item.cantidad_despachada + cantidad
-                            }
-                          : item
-                  )
-              );
-
-              setProductoSeleccionado(null);
-              setNuevoConteo('');
-              setModalVisible(false);
-              Alert.alert('Éxito', 'Salida de mercancía registrada correctamente.');
-
-          } catch (error) {
-              console.log('Error al registrar salida:', error);
-              Alert.alert('Error', error instanceof Error ? error.message : 'Error de conexión.');
-          }
-    };
+              };
 
     useEffect(() => {
         if (id_pedido) {
