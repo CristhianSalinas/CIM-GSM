@@ -253,8 +253,10 @@ export default function CrearSalida() {
                         </Pressable>
 
                         {mostrarClientes && (
+                            
                             <View style={styles.listaDesplegable}>
                                 {clientes.map(cliente => (
+                                    <ScrollView >
                                     <Pressable
                                         key={cliente.id_cliente}
                                         style={styles.opcion}
@@ -268,8 +270,10 @@ export default function CrearSalida() {
                                         </Text>
                                         <Text style={styles.secundario}>Doc: {cliente.numero_documento}</Text>
                                     </Pressable>
+                                    </ScrollView>
                                 ))}
                             </View>
+                            
                         )}
                     </View>
 

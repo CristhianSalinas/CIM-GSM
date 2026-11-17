@@ -4,19 +4,18 @@ import {
     Text,
     StyleSheet,
     TextInput,
-    FlatList,
+    ScrollView,
     Pressable,
     ActivityIndicator,
     RefreshControl,
-    ScrollView,
     Platform,
+    Dimensions,
 } from 'react-native';
 
 import { API_URL } from '../../../constants/api';
 import { obtenerToken } from '../../../constants/auth';
 import BotonInicio from '../../../componentes/botones/boton_inicio';
 
-// TIPOS
 interface Movimiento {
     id: number;
     id_movimentos: number;
@@ -44,11 +43,9 @@ export default function Historial() {
     const [actualizando, setActualizando] = useState(false);
     const [error, setError] = useState('');
 
-    // CONSULTAR HISTORIAL
     const cargarHistorial = useCallback(async () => {
         try {
             setError('');
-
             const token = await obtenerToken();
 
             const respuesta = await fetch(
@@ -88,7 +85,6 @@ export default function Historial() {
         cargarHistorial();
     }, [cargarHistorial]);
 
-    // FILTRAR HISTORIAL
     useEffect(() => {
         let resultado = [...historial];
 
@@ -113,13 +109,11 @@ export default function Historial() {
         setHistorialFiltrado(resultado);
     }, [historial, busqueda, tipoSeleccionado]);
 
-    // ACTUALIZAR
     const actualizar = () => {
         setActualizando(true);
         cargarHistorial();
     };
 
-    // CONFIGURACIÓN VISUAL POR TIPO DE MOVIMIENTO
     const obtenerEstiloTipo = (tipo: number) => {
         switch (tipo) {
             case 1:
@@ -157,12 +151,9 @@ export default function Historial() {
         }
     };
 
-    // FORMATO FECHA
     const formatearFecha = (fecha: string) => {
         if (!fecha) return '-';
-
         const fechaObj = new Date(fecha);
-
         if (isNaN(fechaObj.getTime())) return fecha;
 
         return fechaObj.toLocaleString('es-CO', {
@@ -175,103 +166,6 @@ export default function Historial() {
         });
     };
 
-    // FILA DE HISTORIAL
-    const renderMovimiento = ({ item, index }: { item: Movimiento; index: number }) => {
-        const estiloTipo = obtenerEstiloTipo(item.id_movimentos);
-        const esPar = index % 2 === 0;
-
-        return (
-            <View style={[styles.fila, esPar ? styles.filaPar : styles.filaImpar]}>
-                <Text style={[styles.celda, styles.fecha, styles.textoSecundario]} numberOfLines={1}>
-                    {formatearFecha(item.fecha)}
-                </Text>
-
-                <View style={[styles.celda, styles.tipo, styles.celdaCentrada]}>
-                    <View
-                        style={[
-                            styles.badge,
-                            {
-                                backgroundColor: estiloTipo.bg,
-                                borderColor: estiloTipo.border,
-                            },
-                        ]}
-                    >
-                        <Text style={[styles.textoTipo, { color: estiloTipo.color }]}>
-                            {estiloTipo.label}
-                        </Text>
-                    </View>
-                </View>
-
-                <Text style={[styles.celda, styles.codigo, styles.textoCodigo]} numberOfLines={1}>
-                    {item.codigo_sm || '-'}
-                </Text>
-
-                <Text style={[styles.celda, styles.producto, styles.textoPrincipal]} numberOfLines={1}>
-                    {item.producto || '-'}
-                </Text>
-
-                <Text
-                    style={[
-                        styles.celda,
-                        styles.cantidad,
-                        styles.textoCantidad,
-                        { color: estiloTipo.color },
-                    ]}
-                >
-                    {estiloTipo.prefijo}
-                    {item.cantidad ?? 0}
-                </Text>
-
-                <Text style={[styles.celda, styles.usuario, styles.textoSecundario]} numberOfLines={1}>
-                    {item.usuario || '-'}
-                </Text>
-
-                <View style={[styles.celda, styles.pedido, styles.celdaCentrada, styles.sinBordeDerecho]}>
-                    {item.id_pedido ? (
-                        <View style={styles.pillPedido}>
-                            <Text style={styles.textoPedido}>#{item.id_pedido}</Text>
-                        </View>
-                    ) : (
-                        <Text style={styles.textoSecundario}>-</Text>
-                    )}
-                </View>
-            </View>
-        );
-    };
-
-    // ENCABEZADO DE TABLA
-    const encabezado = (
-        <View style={[styles.fila, styles.encabezado]}>
-            <Text style={[styles.celda, styles.fecha, styles.textoEncabezado]}>
-                FECHA Y HORA
-            </Text>
-
-            <Text style={[styles.celda, styles.tipo, styles.textoEncabezado, { textAlign: 'center' }]}>
-                TIPO
-            </Text>
-
-            <Text style={[styles.celda, styles.codigo, styles.textoEncabezado]}>
-                CÓDIGO
-            </Text>
-
-            <Text style={[styles.celda, styles.producto, styles.textoEncabezado]}>
-                PRODUCTO
-            </Text>
-
-            <Text style={[styles.celda, styles.cantidad, styles.textoEncabezado]}>
-                CANT.
-            </Text>
-
-            <Text style={[styles.celda, styles.usuario, styles.textoEncabezado]}>
-                USUARIO
-            </Text>
-
-            <Text style={[styles.celda, styles.pedido, styles.textoEncabezado, styles.sinBordeDerecho]}>
-                PEDIDO
-            </Text>
-        </View>
-    );
-
     if (cargando) {
         return (
             <View style={styles.centrado}>
@@ -283,9 +177,10 @@ export default function Historial() {
 
     return (
         <View style={styles.contenedor}>
-            <View style={styles.navegacion}>
+            <View>
                 <BotonInicio />
-            </View>          
+            </View>         
+
             {/* HEADER */}
             <View style={styles.header}>
                 <Text style={styles.titulo}>Historial de movimientos</Text>
@@ -369,39 +264,94 @@ export default function Historial() {
                 </View>
             )}
 
-            {/* TABLA */}
+            {/* TABLA ADAPTADA PARA ANDROID Y WEB */}
             <View style={styles.tablaContenedor}>
                 <ScrollView
                     horizontal
-                    showsHorizontalScrollIndicator
-                    contentContainerStyle={styles.scrollTablaContent}
+                    showsHorizontalScrollIndicator={true}
+                    contentContainerStyle={styles.scrollHorizontalContent}
                 >
-                    <View style={styles.tabla}>
-                        {encabezado}
+                    <ScrollView
+                        style={styles.scrollVertical}
+                        refreshControl={
+                            <RefreshControl
+                                refreshing={actualizando}
+                                onRefresh={actualizar}
+                                colors={['#1D4ED8']}
+                                tintColor="#1D4ED8"
+                            />
+                        }
+                    >
+                        <View style={styles.tabla}>
+                            {/* ENCABEZADO */}
+                            <View style={[styles.fila, styles.encabezado]}>
+                                <Text style={[styles.celda, styles.fecha, styles.textoEncabezado]}>FECHA Y HORA</Text>
+                                <Text style={[styles.celda, styles.tipo, styles.textoEncabezado, { textAlign: 'center' }]}>TIPO</Text>
+                                <Text style={[styles.celda, styles.codigo, styles.textoEncabezado]}>CÓDIGO</Text>
+                                <Text style={[styles.celda, styles.producto, styles.textoEncabezado]}>PRODUCTO</Text>
+                                <Text style={[styles.celda, styles.cantidad, styles.textoEncabezado]}>CANT.</Text>
+                                <Text style={[styles.celda, styles.usuario, styles.textoEncabezado]}>USUARIO</Text>
+                                <Text style={[styles.celda, styles.pedido, styles.textoEncabezado, styles.sinBordeDerecho]}>PEDIDO</Text>
+                            </View>
 
-                        <FlatList
-                            data={historialFiltrado}
-                            keyExtractor={item => String(item.id)}
-                            renderItem={renderMovimiento}
-                            style={styles.lista}
-                            refreshControl={
-                                <RefreshControl
-                                    refreshing={actualizando}
-                                    onRefresh={actualizar}
-                                    colors={['#1D4ED8']}
-                                    tintColor="#1D4ED8"
-                                />
-                            }
-                            ListEmptyComponent={
+                            {/* FILAS DE DATOS */}
+                            {historialFiltrado.length > 0 ? (
+                                historialFiltrado.map((item, index) => {
+                                    const estiloTipo = obtenerEstiloTipo(item.id_movimentos);
+                                    const esPar = index % 2 === 0;
+
+                                    return (
+                                        <View key={item.id} style={[styles.fila, esPar ? styles.filaPar : styles.filaImpar]}>
+                                            <Text style={[styles.celda, styles.fecha, styles.textoSecundario]} numberOfLines={1}>
+                                                {formatearFecha(item.fecha)}
+                                            </Text>
+
+                                            <View style={[styles.celda, styles.tipo, styles.celdaCentrada]}>
+                                                <View style={[styles.badge, { backgroundColor: estiloTipo.bg, borderColor: estiloTipo.border }]}>
+                                                    <Text style={[styles.textoTipo, { color: estiloTipo.color }]}>
+                                                        {estiloTipo.label}
+                                                    </Text>
+                                                </View>
+                                            </View>
+
+                                            <Text style={[styles.celda, styles.codigo, styles.textoCodigo]} numberOfLines={1}>
+                                                {item.codigo_sm || '-'}
+                                            </Text>
+
+                                            <Text style={[styles.celda, styles.producto, styles.textoPrincipal]} numberOfLines={1}>
+                                                {item.producto || '-'}
+                                            </Text>
+
+                                            <Text style={[styles.celda, styles.cantidad, styles.textoCantidad, { color: estiloTipo.color }]}>
+                                                {estiloTipo.prefijo}{item.cantidad ?? 0}
+                                            </Text>
+
+                                            <Text style={[styles.celda, styles.usuario, styles.textoSecundario]} numberOfLines={1}>
+                                                {item.usuario || '-'}
+                                            </Text>
+
+                                            <View style={[styles.celda, styles.pedido, styles.celdaCentrada, styles.sinBordeDerecho]}>
+                                                {item.id_pedido ? (
+                                                    <View style={styles.pillPedido}>
+                                                        <Text style={styles.textoPedido}>#{item.id_pedido}</Text>
+                                                    </View>
+                                                ) : (
+                                                    <Text style={styles.textoSecundario}>-</Text>
+                                                )}
+                                            </View>
+                                        </View>
+                                    );
+                                })
+                            ) : (
                                 <View style={styles.emptyContainer}>
                                     <Text style={styles.sinDatosTitulo}>Sin resultados</Text>
                                     <Text style={styles.sinDatos}>
                                         No se encontraron movimientos con los filtros actuales.
                                     </Text>
                                 </View>
-                            }
-                        />
-                    </View>
+                            )}
+                        </View>
+                    </ScrollView>
                 </ScrollView>
             </View>
         </View>
@@ -415,38 +365,32 @@ const styles = StyleSheet.create({
         backgroundColor: '#F8FAFC',
         padding: 16,
     },
-
     centrado: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
         backgroundColor: '#F8FAFC',
     },
-
     textoCarga: {
         marginTop: 12,
         color: '#64748B',
         fontSize: 13,
         fontWeight: '500',
     },
-
     header: {
         marginBottom: 14,
     },
-
     titulo: {
         fontSize: 22,
         fontWeight: '700',
         color: '#0F172A',
         letterSpacing: -0.3,
     },
-
     subtitulo: {
         fontSize: 13,
         color: '#64748B',
         marginTop: 3,
     },
-
     buscadorWrapper: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -457,20 +401,13 @@ const styles = StyleSheet.create({
         paddingHorizontal: 12,
         height: 42,
         marginBottom: 12,
-        shadowColor: '#0F172A',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.04,
-        shadowRadius: 2,
-        elevation: 1,
     },
-
     busqueda: {
         flex: 1,
         fontSize: 13,
         color: '#1E293B',
         height: '100%',
     },
-
     botonLimpiar: {
         backgroundColor: '#E2E8F0',
         width: 20,
@@ -480,20 +417,17 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         marginLeft: 8,
     },
-
     textoLimpiar: {
         fontSize: 11,
         color: '#475569',
         fontWeight: '700',
     },
-
     filtros: {
         flexDirection: 'row',
         flexWrap: 'wrap',
         gap: 8,
         marginBottom: 14,
     },
-
     botonFiltro: {
         paddingVertical: 7,
         paddingHorizontal: 14,
@@ -502,39 +436,32 @@ const styles = StyleSheet.create({
         borderColor: '#CBD5E1',
         borderRadius: 20,
     },
-
     botonFiltroActivo: {
         backgroundColor: '#1E293B',
         borderColor: '#1E293B',
     },
-
     textoFiltro: {
         fontSize: 12,
         color: '#475569',
         fontWeight: '600',
     },
-
     textoFiltroActivo: {
         color: '#FFFFFF',
     },
-
     resumen: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
         marginBottom: 10,
     },
-
     textoResumen: {
         fontSize: 12,
         color: '#64748B',
     },
-
     numeroResumen: {
         fontWeight: '700',
         color: '#0F172A',
     },
-
     botonActualizarWrapper: {
         backgroundColor: '#EFF6FF',
         paddingHorizontal: 10,
@@ -543,13 +470,11 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: '#BFDBFE',
     },
-
     botonActualizar: {
         fontSize: 12,
         color: '#1D4ED8',
         fontWeight: '600',
     },
-
     errorBox: {
         backgroundColor: '#FEF2F2',
         borderWidth: 1,
@@ -558,13 +483,11 @@ const styles = StyleSheet.create({
         padding: 10,
         marginBottom: 10,
     },
-
     error: {
         color: '#B91C1C',
         fontSize: 12,
         fontWeight: '500',
     },
-
     tablaContenedor: {
         flex: 1,
         width: '100%',
@@ -573,53 +496,37 @@ const styles = StyleSheet.create({
         borderColor: '#E2E8F0',
         borderRadius: 10,
         overflow: 'hidden',
-        shadowColor: '#0F172A',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.05,
-        shadowRadius: 6,
-        elevation: 2,
     },
-
-    scrollTablaContent: {
+    scrollHorizontalContent: {
         flexGrow: 1,
-        width: '100%',
+        minWidth: '100%',
     },
-
+    scrollVertical: {
+        flex: 1,
+    },
     tabla: {
-        flex: 1,
-        width: '100%',
-        minWidth: 960,
+        width: 980, // Ancho calculado exacto para que abarque todas las columnas sin cortes en Android
     },
-
-    lista: {
-        flex: 1,
-        width: '100%',
-    },
-
     fila: {
         flexDirection: 'row',
         alignItems: 'center',
         width: '100%',
-        minHeight: 42,
+        minHeight: 44,
         borderBottomWidth: 1,
         borderBottomColor: '#F1F5F9',
     },
-
     filaPar: {
         backgroundColor: '#FFFFFF',
     },
-
     filaImpar: {
         backgroundColor: '#F8FAFC',
     },
-
     encabezado: {
-        minHeight: 40,
+        minHeight: 42,
         backgroundColor: '#F1F5F9',
         borderBottomWidth: 1,
         borderBottomColor: '#CBD5E1',
     },
-
     celda: {
         fontSize: 12,
         paddingHorizontal: 12,
@@ -627,123 +534,79 @@ const styles = StyleSheet.create({
         borderRightWidth: 1,
         borderRightColor: '#F1F5F9',
     },
-
     celdaCentrada: {
         alignItems: 'center',
         justifyContent: 'center',
     },
-
     sinBordeDerecho: {
         borderRightWidth: 0,
     },
-
     textoEncabezado: {
         fontWeight: '700',
         color: '#475569',
         fontSize: 11,
         letterSpacing: 0.4,
     },
-
     textoPrincipal: {
         color: '#0F172A',
         fontWeight: '500',
     },
-
     textoSecundario: {
         color: '#64748B',
         fontSize: 11.5,
     },
-
     textoCodigo: {
         color: '#334155',
         fontWeight: '600',
         fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
         fontSize: 11.5,
     },
-
     textoCantidad: {
         fontWeight: '700',
         fontSize: 12.5,
     },
-
-    // COLUMNAS RESPONSIVAS (Se estiran al 100% en monitor y respetan minWidth en móvil)
-    fecha: {
-        flex: 1.4,
-        minWidth: 155,
-    },
-
-    tipo: {
-        flex: 1.1,
-        minWidth: 115,
-    },
-
-    codigo: {
-        flex: 1.1,
-        minWidth: 110,
-    },
-
-    producto: {
-        flex: 2.8,
-        minWidth: 240,
-    },
-
-    cantidad: {
-        flex: 0.8,
-        minWidth: 80,
-        textAlign: 'center',
-    },
-
-    usuario: {
-        flex: 1.8,
-        minWidth: 160,
-    },
-
-    pedido: {
-        flex: 0.9,
-        minWidth: 90,
-        textAlign: 'center',
-    },
-
-    // BADGES Y PILLS
+    // Tamaños óptimos en pixeles para que la tabla no se corte en Android
+    fecha: { width: 160 },
+    tipo: { width: 115 },
+    codigo: { width: 110 },
+    producto: { width: 250 },
+    cantidad: { width: 85, textAlign: 'center' },
+    usuario: { width: 170 },
+    pedido: { width: 90, textAlign: 'center' },
     badge: {
         paddingHorizontal: 8,
         paddingVertical: 3,
         borderRadius: 6,
         borderWidth: 1,
     },
-
     textoTipo: {
         fontSize: 10,
         fontWeight: '700',
         letterSpacing: 0.3,
     },
-
     pillPedido: {
         backgroundColor: '#F1F5F9',
         paddingHorizontal: 8,
         paddingVertical: 2,
         borderRadius: 4,
     },
-
     textoPedido: {
         fontSize: 11,
         fontWeight: '600',
         color: '#334155',
     },
-
     emptyContainer: {
         paddingVertical: 40,
         paddingHorizontal: 20,
         alignItems: 'center',
+        width: 980,
     },
-
     sinDatosTitulo: {
         fontSize: 14,
         fontWeight: '600',
         color: '#334155',
         marginBottom: 4,
     },
-
     sinDatos: {
         textAlign: 'center',
         color: '#94A3B8',

@@ -303,6 +303,7 @@ const tipo = Number(tipoParametro);
 
                     {mostrarClientes && (
                         <View style={styles.listaDesplegable}>
+                            <ScrollView>
                             {clientes.map(cliente => (
                                 <Pressable
                                     key={cliente.id_cliente}
@@ -318,6 +319,7 @@ const tipo = Number(tipoParametro);
                                     <Text style={styles.secundario}>Doc: {cliente.numero_documento}</Text>
                                 </Pressable>
                             ))}
+                            </ScrollView>
                         </View>
                     )}
 
