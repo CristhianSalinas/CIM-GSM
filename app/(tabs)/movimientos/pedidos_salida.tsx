@@ -143,26 +143,27 @@ export default function PedidosSalida() {
             <SafeAreaView style={styles.safeArea}>
                 <View style={styles.contenedor}>
                     
-                    {(Number(usuarioActual?.id_rol) === 1 || Number(usuarioActual?.id_rol) === 2)  && (
-                            <>
                     
                         {/* BARRA SUPERIOR: VOLVER + ACCIÓN PRINCIPAL */}
                         <View style={styles.topBar}>
                             <BotonVolver />
-
-                            <Pressable
-                                style={({ pressed }) => [
-                                    styles.botonCrear,
-                                    pressed && { opacity: 0.85 },
-                                ]}
-                                onPress={crearSalida}
-                            >
-                                <Text style={styles.botonCrearTexto}>+ Crear salida</Text>
-                            </Pressable>
-                        </View>
-                      </>
+                            
+                    {(Number(usuarioActual?.id_rol) === 1 || Number(usuarioActual?.id_rol) === 2)  && (
+                            <>
+                                    <Pressable
+                                        style={({ pressed }) => [
+                                            styles.botonCrear,
+                                            pressed && { opacity: 0.85 },
+                                        ]}
+                                        onPress={crearSalida}
+                                    >
+                                        <Text style={styles.botonCrearTexto}>+ Crear salida</Text>
+                                    </Pressable>
+                                    </>
                     )} 
 
+                        </View>
+                      
                     {/* HEADER */}
                     <View style={styles.header}>
                         <View style={styles.headerTop}>
