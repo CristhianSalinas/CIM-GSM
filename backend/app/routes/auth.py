@@ -5,6 +5,9 @@ from app.config.database import get_db
 from app.schemas.auth import LoginRequest, TokenRespuesta
 from app.controllers.auth import autenticar_usuario
 from app.auth.security import verificar_password, crear_access_token
+from app.models.usuario import Usuario
+from app.auth.dependencies import obtener_usuario_actual
+from app.schemas.usuario import UsuarioRespuesta
 
 
 router = APIRouter(
@@ -12,6 +15,11 @@ router = APIRouter(
     tags=["Autenticación"]
 )
 
+@router.get("/me", response_model=UsuarioRespuesta)
+def obtener_perfil_actual(
+    usuario: Usuario = Depends(obtener_usuario_actual)
+):
+    return usuario
 
 @router.post("/login", response_model=TokenRespuesta)
 def iniciar_sesion(

@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { API_URL } from '../constants/api';
 import { useRouter } from 'expo-router';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
 import { useUsuarioActual } from '../hooks/useUsuarioActual';
 import { useAuth } from '../context/AuthContext';
 import { obtenerToken } from '../constants/auth';
@@ -13,11 +13,11 @@ import {
     ScrollView,
     Pressable,
     Image,
+    Platform,
     useWindowDimensions,
     TouchableOpacity,
     ActivityIndicator,
     RefreshControl,
-    Modal,
 } from 'react-native';
 
 interface InventarioConteo {
@@ -52,10 +52,6 @@ export default function Index() {
     const [actualizando, setActualizando] = useState(false);
     const [error, setError] = useState('');
     const [menuVisible, setMenuVisible] = useState(false);
-
-    const rolId = Number(usuarioActual?.id_rol);
-    const esAdmin = rolId === 1;
-    const puedeVerPendientesYHistorial = rolId === 1 || rolId === 2 || rolId === 3;
 
     // =========================================================================
     // CARGAR CONTEOS DEL DASHBOARD
@@ -141,340 +137,298 @@ export default function Index() {
         router.push('/cliente');
     };
 
-    const manejarCerrarSesion = () => {
-        setMenuVisible(false);
-        cerrarSesion();
-    };
-
     return (
-        <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
-            <ScrollView
-                showsVerticalScrollIndicator={false}
-                contentContainerStyle={styles.scrollContent}
-                refreshControl={
-                    <RefreshControl
-                        refreshing={actualizando}
-                        onRefresh={alRefrescar}
-                        colors={['#1E3A8A']}
-                        tintColor="#1E3A8A"
-                    />
-                }
-            >
-                <View
-                    style={[
-                        styles.container,
-                        esPantallaGrande && styles.containerWeb,
-                    ]}
+        <SafeAreaProvider>
+            <SafeAreaView style={styles.safeArea}>
+                <ScrollView
+                    showsVerticalScrollIndicator={false}
+                    contentContainerStyle={styles.scrollContent}
+                    refreshControl={
+                        <RefreshControl
+                            refreshing={actualizando}
+                            onRefresh={alRefrescar}
+                            colors={['#1E3A8A']}
+                            tintColor="#1E3A8A"
+                        />
+                    }
                 >
-                    {/* =================================================== */}
-                    {/* ENCABEZADO                                          */}
-                    {/* =================================================== */}
-                    <View style={styles.header}>
-                        <View style={styles.headerBrand}>
-                            <Text style={styles.systemName}>CIM</Text>
-                            <Text style={styles.systemDescription} numberOfLines={1}>
-                                Control de Inventarios y Movimientos
-                            </Text>
-                        </View>
-
-                        <View style={styles.statusSystem}>
-                            <View style={styles.statusDot} />
-                            <Text style={styles.statusText}>Sistema activo</Text>
-                        </View>
-                    </View>
-
-                    {/* =================================================== */}
-                    {/* BIENVENIDA                                          */}
-                    {/* =================================================== */}
-                    <View style={[styles.welcome, !esPantallaGrande && styles.welcomeMobile]}>
-                        <Text style={[styles.welcomeTitle, !esPantallaGrande && styles.welcomeTitleMobile]}>
-                            Bienvenido
-                        </Text>
-                        <Text style={styles.welcomeSubtitle}>
-                            Administra y controla las operaciones de inventario desde un solo lugar.
-                        </Text>
-                    </View>
-
-                    {/* =================================================== */}
-                    {/* FILA SUPERIOR: PERFIL + ACTIVIDADES PENDIENTES      */}
-                    {/* =================================================== */}
                     <View
                         style={[
-                            styles.topCardsWrapper,
-                            esPantallaGrande && styles.topCardsWrapperWeb,
+                            styles.container,
+                            esPantallaGrande && styles.containerWeb,
                         ]}
                     >
-                        {/* TARJETA DE PERFIL */}
-                        <View
-                            style={[
-                                styles.profileCard,
-                                !esPantallaGrande && styles.profileCardMobile,
-                            ]}
-                        >
-                            <Image
-                                style={[
-                                    styles.profileImage,
-                                    !esPantallaGrande && styles.profileImageMobile,
-                                ]}
-                                source={require('../img/profile.png')}
-                            />
-
-                            <View style={styles.profileInfo}>
-                                <Text style={styles.profileLabel}>
-                                    {sesionActiva ? 'SESIÓN ACTIVA' : 'SESIÓN INACTIVA'}
-                                </Text>
-
-                                <Text style={styles.profileName} numberOfLines={1}>
-                                    {usuarioActual?.usuario || 'Usuario no identificado'}
-                                </Text>
-
-                                <Text style={styles.profileRole}>
-                                    {usuarioActual
-                                        ? `ID de rol: ${usuarioActual.id_rol}`
-                                        : 'Sin sesión iniciada'}
+                        {/* =================================================== */}
+                        {/* ENCABEZADO                                          */}
+                        {/* =================================================== */}
+                        <View style={styles.header}>
+                            <View style={styles.headerBrand}>
+                                <Text style={styles.systemName}>CIM</Text>
+                                <Text style={styles.systemDescription}>
+                                    Control de Inventarios y Movimientos
                                 </Text>
                             </View>
 
-                            <View style={styles.profileIndicator}>
-                                <View
-                                    style={[
-                                        styles.statusDot,
-                                        {
-                                            backgroundColor: sesionActiva
-                                                ? '#22C55E'
-                                                : '#EF4444',
-                                        },
-                                    ]}
-                                />
+                            <View style={styles.statusSystem}>
+                                <View style={styles.statusDot} />
+                                <Text style={styles.statusText}>Sistema activo</Text>
                             </View>
-
-                            {/* BOTÓN MENÚ */}
-                            <TouchableOpacity
-                                style={styles.menuButton}
-                                onPress={() => setMenuVisible(true)}
-                                activeOpacity={0.7}
-                                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                            >
-                                <Text style={styles.menuButtonText}>⋮</Text>
-                            </TouchableOpacity>
                         </View>
 
-                        {/* TARJETA DE ACTIVIDADES PENDIENTES */}
-                        {puedeVerPendientesYHistorial && (
+                        {/* =================================================== */}
+                        {/* BIENVENIDA                                          */}
+                        {/* =================================================== */}
+                        <View style={[styles.welcome, !esPantallaGrande && styles.welcomeMobile]}>
+                            <Text style={[styles.welcomeTitle, !esPantallaGrande && styles.welcomeTitleMobile]}>
+                                Bienvenido
+                            </Text>
+                            <Text style={styles.welcomeSubtitle}>
+                                Administra y controla las operaciones de inventario desde un solo lugar.
+                            </Text>
+                        </View>
+
+                        {/* =================================================== */}
+                        {/* FILA SUPERIOR: PERFIL + ACTIVIDADES PENDIENTES      */}
+                        {/* =================================================== */}
+                        <View
+                            style={[
+                                styles.topCardsWrapper,
+                                esPantallaGrande && styles.topCardsWrapperWeb,
+                            ]}
+                        >
+                            {/* TARJETA DE PERFIL */}
                             <View
                                 style={[
-                                    styles.activityCard,
-                                    !esPantallaGrande && styles.activityCardMobile,
+                                    styles.profileCard,
+                                    !esPantallaGrande && styles.profileCardMobile,
                                 ]}
                             >
-                                <View style={styles.activityTop}>
-                                    <Text style={styles.activityLabel}>
-                                        ACTIVIDADES PENDIENTES
+                                <Image
+                                    style={[
+                                        styles.profileImage,
+                                        !esPantallaGrande && styles.profileImageMobile,
+                                    ]}
+                                    source={require('../img/profile.png')}
+                                />
+
+                                <View style={styles.profileInfo}>
+                                    <Text style={styles.profileLabel}>
+                                        {sesionActiva ? 'SESIÓN ACTIVA' : 'SESIÓN INACTIVA'}
                                     </Text>
 
-                                    <View style={styles.activityIcon}>
-                                        <Text style={styles.activityIconText}>!</Text>
-                                    </View>
+                                    <Text style={styles.profileName} numberOfLines={1}>
+                                        {usuarioActual?.usuario || 'Usuario no identificado'}
+                                    </Text>
+
+                                    <Text style={styles.profileRole}>
+                                        {usuarioActual
+                                            ? `ID de rol: ${usuarioActual.id_rol}`
+                                            : 'Sin sesión iniciada'}
+                                    </Text>
                                 </View>
 
-                                {cargando ? (
-                                    <View style={styles.activityLoader}>
-                                        <ActivityIndicator size="small" color="#2563EB" />
-                                    </View>
-                                ) : error ? (
-                                    <Text style={styles.activityErrorText}>
-                                        No fue posible cargar las actividades.
-                                    </Text>
-                                ) : (
+                                <View style={styles.profileIndicator}>
                                     <View
                                         style={[
-                                            styles.activityGroupsContainer,
-                                            !esPantallaGrande && styles.activityGroupsMobile,
+                                            styles.statusDot,
+                                            {
+                                                backgroundColor: sesionActiva
+                                                    ? '#22C55E'
+                                                    : '#EF4444',
+                                            },
+                                        ]}
+                                    />
+                                </View>
+
+                                {/* MENÚ DESPLEGABLE */}
+                                <View style={styles.profileMenuContainer}>
+                                    <TouchableOpacity
+                                        style={styles.menuButton}
+                                        onPress={() => setMenuVisible(!menuVisible)}
+                                        activeOpacity={0.7}
+                                    >
+                                        <Text style={styles.menuButtonText}>⋮</Text>
+                                    </TouchableOpacity>
+
+                                    {menuVisible && (
+                                        <View style={styles.dropdownMenu}>
+                                            <TouchableOpacity
+                                                style={styles.dropdownOption}
+                                                onPress={cerrarSesion}
+                                            >
+                                                <Text style={styles.dropdownIcon}>↪</Text>
+                                                <Text style={styles.dropdownText}>
+                                                    Cerrar sesión
+                                                </Text>
+                                            </TouchableOpacity>
+
+                                            {Number(usuarioActual?.id_rol) === 1 && (
+                                                <>
+                                                    <TouchableOpacity
+                                                        style={styles.dropdownOption}
+                                                        onPress={crearUsuario}
+                                                    >
+                                                        <Text style={styles.dropdownIcon}>＋</Text>
+                                                        <Text style={styles.dropdownText}>
+                                                            Crear usuario
+                                                        </Text>
+                                                    </TouchableOpacity>
+
+                                                    <TouchableOpacity
+                                                        style={styles.dropdownOption}
+                                                        onPress={crearCliente}
+                                                    >
+                                                        <Text style={styles.dropdownIcon}>＋</Text>
+                                                        <Text style={styles.dropdownText}>
+                                                            Crear cliente
+                                                        </Text>
+                                                    </TouchableOpacity>
+                                                </>
+                                            )}
+                                        </View>
+                                    )}
+                                </View>
+                            </View>
+                            
+
+                             {(Number(usuarioActual?.id_rol) === 1 || Number(usuarioActual?.id_rol) === 2 ||  Number(usuarioActual?.id_rol) === 3)  && (
+                            <>
+                                    {/* TARJETA DE ACTIVIDADES PENDIENTES */}
+                                    <View
+                                        style={[
+                                            styles.activityCard,
+                                            !esPantallaGrande && styles.activityCardMobile,
                                         ]}
                                     >
-                                        {/* BLOQUE INVENTARIOS */}
-                                        <View style={styles.activityGroup}>
-                                            <Text style={styles.activitySection}>
-                                                INVENTARIOS
+                                        <View style={styles.activityTop}>
+                                            <Text style={styles.activityLabel}>
+                                                ACTIVIDADES PENDIENTES
                                             </Text>
 
-                                            <View style={styles.activityStats}>
-                                                <View style={styles.activityStat}>
-                                                    <Text style={styles.activityNumber}>
-                                                        {inventario.inventarios_pendientes}
-                                                    </Text>
-                                                    <Text style={styles.activityDescription}>
-                                                        Pendientes
-                                                    </Text>
-                                                </View>
-
-                                                <View style={styles.statDivider} />
-
-                                                <View style={styles.activityStat}>
-                                                    <Text style={styles.activityNumber}>
-                                                        {inventario.inventarios_en_progreso}
-                                                    </Text>
-                                                    <Text style={styles.activityDescription}>
-                                                        En progreso
-                                                    </Text>
-                                                </View>
+                                            <View style={styles.activityIcon}>
+                                                <Text style={styles.activityIconText}>!</Text>
                                             </View>
                                         </View>
 
-                                        {/* BLOQUE PEDIDOS */}
-                                        <View style={styles.activityGroup}>
-                                            <Text style={styles.activitySection}>
-                                                PEDIDOS
+                                        {cargando ? (
+                                            <View style={styles.activityLoader}>
+                                                <ActivityIndicator size="small" color="#2563EB" />
+                                            </View>
+                                        ) : error ? (
+                                            <Text style={styles.activityErrorText}>
+                                                No fue posible cargar las actividades.
                                             </Text>
+                                        ) : (
+                                            <View
+                                                style={[
+                                                    styles.activityGroupsContainer,
+                                                    !esPantallaGrande && styles.activityGroupsMobile,
+                                                ]}
+                                            >
+                                                {/* BLOQUE INVENTARIOS */}
+                                                <View style={styles.activityGroup}>
+                                                    <Text style={styles.activitySection}>
+                                                        INVENTARIOS
+                                                    </Text>
 
-                                            <View style={styles.activityStats}>
-                                                <View style={styles.activityStat}>
-                                                    <Text style={styles.activityNumber}>
-                                                        {movimientos.pedidos_pendientes}
-                                                    </Text>
-                                                    <Text style={styles.activityDescription}>
-                                                        Pendientes
-                                                    </Text>
+                                                    <View style={styles.activityStats}>
+                                                        <View style={styles.activityStat}>
+                                                            <Text style={styles.activityNumber}>
+                                                                {inventario.inventarios_pendientes}
+                                                            </Text>
+                                                            <Text style={styles.activityDescription}>
+                                                                Pendientes
+                                                            </Text>
+                                                        </View>
+
+                                                        <View style={styles.statDivider} />
+
+                                                        <View style={styles.activityStat}>
+                                                            <Text style={styles.activityNumber}>
+                                                                {inventario.inventarios_en_progreso}
+                                                            </Text>
+                                                            <Text style={styles.activityDescription}>
+                                                                En progreso
+                                                            </Text>
+                                                        </View>
+                                                    </View>
                                                 </View>
 
-                                                <View style={styles.statDivider} />
+                                                {/* BLOQUE PEDIDOS */}
+                                                <View style={styles.activityGroup}>
+                                                    <Text style={styles.activitySection}>
+                                                        PEDIDOS
+                                                    </Text>
 
-                                                <View style={styles.activityStat}>
-                                                    <Text style={styles.activityNumber}>
-                                                        {movimientos.pedidos_en_progreso}
-                                                    </Text>
-                                                    <Text style={styles.activityDescription}>
-                                                        En progreso
-                                                    </Text>
+                                                    <View style={styles.activityStats}>
+                                                        <View style={styles.activityStat}>
+                                                            <Text style={styles.activityNumber}>
+                                                                {movimientos.pedidos_pendientes}
+                                                            </Text>
+                                                            <Text style={styles.activityDescription}>
+                                                                Pendientes
+                                                            </Text>
+                                                        </View>
+
+                                                        <View style={styles.statDivider} />
+
+                                                        <View style={styles.activityStat}>
+                                                            <Text style={styles.activityNumber}>
+                                                                {movimientos.pedidos_en_progreso}
+                                                            </Text>
+                                                            <Text style={styles.activityDescription}>
+                                                                En progreso
+                                                            </Text>
+                                                        </View>
+                                                    </View>
                                                 </View>
                                             </View>
-                                        </View>
+                                        )}
                                     </View>
-                                )}
-                            </View>
-                        )}
+                                </>
+                        )}   
+                            
                     </View>
+  
+                            
 
-                    {/* =================================================== */}
-                    {/* SECCIÓN DE MÓDULOS                                  */}
-                    {/* =================================================== */}
-                    <View style={styles.modulesSection}>
-                        <View style={styles.sectionHeader}>
-                            <Text style={styles.sectionTitle}>
-                                Módulos del sistema
-                            </Text>
-                            <Text style={styles.sectionSubtitle}>
-                                Selecciona el módulo al que deseas ingresar.
-                            </Text>
-                        </View>
+                        {/* =================================================== */}
+                        {/* SECCIÓN DE MÓDULOS                                  */}
+                        {/* =================================================== */}
+                        <View style={styles.modulesSection}>
+                            <View style={styles.sectionHeader}>
+                                <Text style={styles.sectionTitle}>
+                                    Módulos del sistema
+                                </Text>
+                                <Text style={styles.sectionSubtitle}>
+                                    Selecciona el módulo al que deseas ingresar.
+                                </Text>
+                            </View>
 
-                        <View
-                            style={[
-                                styles.modulesGrid,
-                                esPantallaGrande && styles.modulesGridWeb,
-                            ]}
-                        >
-                            {/* MÓDULO 01: INVENTARIO */}
-                            <Pressable
-                                style={({ pressed }) => [
-                                    styles.moduleCard,
-                                    esPantallaGrande && styles.moduleCardWeb,
-                                    pressed && styles.modulePressed,
+                            <View
+                                style={[
+                                    styles.modulesGrid,
+                                    esPantallaGrande && styles.modulesGridWeb,
                                 ]}
-                                onPress={() => router.push('/(tabs)/inventario')}
                             >
-                                <View style={styles.moduleImageContainer}>
-                                    <Image
-                                        source={require('../img/inventario.jpeg')}
-                                        style={styles.moduleImage}
-                                        resizeMode="cover"
-                                    />
-                                    <View style={styles.moduleTag}>
-                                        <Text style={styles.moduleTagText}>
-                                            MÓDULO 01
-                                        </Text>
-                                    </View>
-                                </View>
-
-                                <View style={styles.moduleContent}>
-                                    <View style={styles.moduleTextContainer}>
-                                        <Text style={styles.moduleTitle}>
-                                            Inventario
-                                        </Text>
-                                        <Text style={styles.moduleDescription}>
-                                            Consulta, administra y verifica las existencias de productos.
-                                        </Text>
-                                    </View>
-
-                                    <View style={styles.moduleAction}>
-                                        <Text style={styles.moduleActionText}>
-                                            Ingresar
-                                        </Text>
-                                        <Text style={styles.moduleArrow}>→</Text>
-                                    </View>
-                                </View>
-                            </Pressable>
-
-                            {/* MÓDULO 02: MOVIMIENTOS */}
-                            <Pressable
-                                style={({ pressed }) => [
-                                    styles.moduleCard,
-                                    esPantallaGrande && styles.moduleCardWeb,
-                                    pressed && styles.modulePressed,
-                                ]}
-                                onPress={() => router.push('/(tabs)/movimientos')}
-                            >
-                                <View style={styles.moduleImageContainer}>
-                                    <Image
-                                        source={require('../img/Movimientos.jpeg')}
-                                        style={styles.moduleImage}
-                                        resizeMode="cover"
-                                    />
-                                    <View style={styles.moduleTag}>
-                                        <Text style={styles.moduleTagText}>
-                                            MÓDULO 02
-                                        </Text>
-                                    </View>
-                                </View>
-
-                                <View style={styles.moduleContent}>
-                                    <View style={styles.moduleTextContainer}>
-                                        <Text style={styles.moduleTitle}>
-                                            Movimientos
-                                        </Text>
-                                        <Text style={styles.moduleDescription}>
-                                            Gestiona entradas, salidas y movimientos de mercancía.
-                                        </Text>
-                                    </View>
-
-                                    <View style={styles.moduleAction}>
-                                        <Text style={styles.moduleActionText}>
-                                            Ingresar
-                                        </Text>
-                                        <Text style={styles.moduleArrow}>→</Text>
-                                    </View>
-                                </View>
-                            </Pressable>
-
-                            {/* MÓDULO 03: HISTORIAL */}
-                            {puedeVerPendientesYHistorial && (
+                                {/* MÓDULO 01: INVENTARIO */}
                                 <Pressable
                                     style={({ pressed }) => [
                                         styles.moduleCard,
                                         esPantallaGrande && styles.moduleCardWeb,
                                         pressed && styles.modulePressed,
                                     ]}
-                                    onPress={() => router.push('/(tabs)/historial')}
+                                    onPress={() => router.push('/(tabs)/inventario')}
                                 >
                                     <View style={styles.moduleImageContainer}>
                                         <Image
-                                            source={require('../img/historial.jpeg')}
+                                            source={require('../img/inventario.jpeg')}
                                             style={styles.moduleImage}
                                             resizeMode="cover"
                                         />
                                         <View style={styles.moduleTag}>
                                             <Text style={styles.moduleTagText}>
-                                                MÓDULO 03
+                                                MÓDULO 01
                                             </Text>
                                         </View>
                                     </View>
@@ -482,10 +436,10 @@ export default function Index() {
                                     <View style={styles.moduleContent}>
                                         <View style={styles.moduleTextContainer}>
                                             <Text style={styles.moduleTitle}>
-                                                Historial
+                                                Inventario
                                             </Text>
                                             <Text style={styles.moduleDescription}>
-                                                Consulta y verifica el historial de pedidos e inventarios.
+                                                Consulta, administra y verifica las existencias de productos.
                                             </Text>
                                         </View>
 
@@ -497,75 +451,119 @@ export default function Index() {
                                         </View>
                                     </View>
                                 </Pressable>
-                            )}
+
+                                {/* MÓDULO 02: MOVIMIENTOS */}
+                                <Pressable
+                                    style={({ pressed }) => [
+                                        styles.moduleCard,
+                                        esPantallaGrande && styles.moduleCardWeb,
+                                        pressed && styles.modulePressed,
+                                    ]}
+                                    onPress={() => router.push('/(tabs)/movimientos')}
+                                >
+                                    <View style={styles.moduleImageContainer}>
+                                        <Image
+                                            source={require('../img/Movimientos.jpeg')}
+                                            style={styles.moduleImage}
+                                            resizeMode="cover"
+                                        />
+                                        <View style={styles.moduleTag}>
+                                            <Text style={styles.moduleTagText}>
+                                                MÓDULO 02
+                                            </Text>
+                                        </View>
+                                    </View>
+
+                                    <View style={styles.moduleContent}>
+                                        <View style={styles.moduleTextContainer}>
+                                            <Text style={styles.moduleTitle}>
+                                                Movimientos
+                                            </Text>
+                                            <Text style={styles.moduleDescription}>
+                                                Gestiona entradas, salidas y movimientos de mercancía.
+                                            </Text>
+                                        </View>
+
+                                        <View style={styles.moduleAction}>
+                                            <Text style={styles.moduleActionText}>
+                                                Ingresar
+                                            </Text>
+                                            <Text style={styles.moduleArrow}>→</Text>
+                                        </View>
+                                    </View>
+                                </Pressable>
+                                {(Number(usuarioActual?.id_rol) === 1 || Number(usuarioActual?.id_rol) === 2 ||  Number(usuarioActual?.id_rol) === 3)  && (
+                                        <>
+                                        {/* MÓDULO 03: HISTORIAL */}
+                                        <Pressable
+                                            style={({ pressed }) => [
+                                                styles.moduleCard,
+                                                esPantallaGrande && styles.moduleCardWeb,
+                                                pressed && styles.modulePressed,
+                                            ]}
+                                            onPress={() => router.push('/(tabs)/historial')}
+                                        >
+                                            <View style={styles.moduleImageContainer}>
+                                                <Image
+                                                    source={require('../img/historial.jpeg')}
+                                                    style={styles.moduleImage}
+                                                    resizeMode="cover"
+                                                />
+                                                <View style={styles.moduleTag}>
+                                                    <Text style={styles.moduleTagText}>
+                                                        MÓDULO 03
+                                                    </Text>
+                                                </View>
+                                            </View>
+
+            
+
+                                            <View style={styles.moduleContent}>
+                                                <View style={styles.moduleTextContainer}>
+                                                    <Text style={styles.moduleTitle}>
+                                                        Historial
+                                                    </Text>
+                                                    <Text style={styles.moduleDescription}>
+                                                        Consulta y verifica el historial de pedidos e inventarios.
+                                                    </Text>
+                                                </View>
+
+                                                <View style={styles.moduleAction}>
+                                                    <Text style={styles.moduleActionText}>
+                                                        Ingresar
+                                                    </Text>
+                                                    <Text style={styles.moduleArrow}>→</Text>
+                                                </View>
+                                            </View>
+                                        
+                            
+
+
+                                        </Pressable>
+                                </>
+                            )}   
+                            </View>
+                        </View>
+
+                        {/* =================================================== */}
+                        {/* PIE DE PÁGINA                                       */}
+                        {/* =================================================== */}
+                        <View style={styles.footer}>
+                            <Text style={styles.footerTitle}>CIM</Text>
+                            <Text style={styles.footerText}>
+                                Sistema de gestión y control de inventarios
+                            </Text>
+                            <Text style={styles.footerVersion}>Versión 1.0.0</Text>
                         </View>
                     </View>
-
-                    {/* =================================================== */}
-                    {/* PIE DE PÁGINA                                       */}
-                    {/* =================================================== */}
-                    <View style={styles.footer}>
-                        <Text style={styles.footerTitle}>CIM</Text>
-                        <Text style={styles.footerText}>
-                            Sistema de gestión y control de inventarios
-                        </Text>
-                        <Text style={styles.footerVersion}>Versión 1.0.0</Text>
-                    </View>
-                </View>
-            </ScrollView>
-
-            {/* =========================================================== */}
-            {/* MODAL DE MENÚ DE USUARIO (EVITA RECORTES EN ANDROID)        */}
-            {/* =========================================================== */}
-            <Modal
-                visible={menuVisible}
-                transparent
-                animationType="fade"
-                onRequestClose={() => setMenuVisible(false)}
-            >
-                <Pressable
-                    style={styles.modalOverlay}
-                    onPress={() => setMenuVisible(false)}
-                >
-                    <View style={styles.dropdownMenuModal}>
-                        <TouchableOpacity
-                            style={styles.dropdownOption}
-                            onPress={manejarCerrarSesion}
-                        >
-                            <Text style={styles.dropdownIcon}>↪</Text>
-                            <Text style={styles.dropdownText}>Cerrar sesión</Text>
-                        </TouchableOpacity>
-
-                        {esAdmin && (
-                            <>
-                                <View style={styles.dropdownDivider} />
-                                <TouchableOpacity
-                                    style={styles.dropdownOption}
-                                    onPress={crearUsuario}
-                                >
-                                    <Text style={styles.dropdownIcon}>＋</Text>
-                                    <Text style={styles.dropdownText}>Crear usuario</Text>
-                                </TouchableOpacity>
-
-                                <View style={styles.dropdownDivider} />
-                                <TouchableOpacity
-                                    style={styles.dropdownOption}
-                                    onPress={crearCliente}
-                                >
-                                    <Text style={styles.dropdownIcon}>＋</Text>
-                                    <Text style={styles.dropdownText}>Crear cliente</Text>
-                                </TouchableOpacity>
-                            </>
-                        )}
-                    </View>
-                </Pressable>
-            </Modal>
-        </SafeAreaView>
+                </ScrollView>
+            </SafeAreaView>
+        </SafeAreaProvider>
     );
 }
 
 // =============================================================================
-// ESTILOS RESPONSIVE CIM (ANDROID & WEB)
+// ESTILOS RESPONSIVE CIM
 // =============================================================================
 const styles = StyleSheet.create({
     // =========================================================================
@@ -597,14 +595,13 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        paddingVertical: 14,
+        paddingVertical: 16,
         borderBottomWidth: 1,
         borderBottomColor: '#E2E8F0',
         gap: 10,
     },
     headerBrand: {
         flex: 1,
-        paddingRight: 8,
     },
     systemName: {
         fontSize: 22,
@@ -613,7 +610,7 @@ const styles = StyleSheet.create({
         letterSpacing: 1,
     },
     systemDescription: {
-        fontSize: 11,
+        fontSize: 10.5,
         color: '#8490A3',
         marginTop: 2,
     },
@@ -623,7 +620,7 @@ const styles = StyleSheet.create({
         gap: 6,
         backgroundColor: '#F0FDF4',
         paddingHorizontal: 10,
-        paddingVertical: 6,
+        paddingVertical: 7,
         borderRadius: 8,
         borderWidth: 1,
         borderColor: '#DCFCE7',
@@ -635,7 +632,7 @@ const styles = StyleSheet.create({
         backgroundColor: '#16A34A',
     },
     statusText: {
-        fontSize: 11,
+        fontSize: 10.5,
         fontWeight: '700',
         color: '#15803D',
     },
@@ -644,12 +641,12 @@ const styles = StyleSheet.create({
     // 3. BIENVENIDA
     // =========================================================================
     welcome: {
-        marginTop: 26,
-        marginBottom: 20,
+        marginTop: 28,
+        marginBottom: 22,
     },
     welcomeMobile: {
-        marginTop: 16,
-        marginBottom: 14,
+        marginTop: 18,
+        marginBottom: 16,
     },
     welcomeTitle: {
         fontSize: 30,
@@ -663,7 +660,7 @@ const styles = StyleSheet.create({
     welcomeSubtitle: {
         fontSize: 13,
         color: '#778196',
-        marginTop: 4,
+        marginTop: 5,
         lineHeight: 19,
         maxWidth: 550,
     },
@@ -674,17 +671,18 @@ const styles = StyleSheet.create({
     topCardsWrapper: {
         flexDirection: 'column',
         gap: 14,
-        marginBottom: 24,
+        marginBottom: 28,
+        zIndex: 20,
     },
     topCardsWrapperWeb: {
         flexDirection: 'row',
         alignItems: 'stretch',
         gap: 18,
-        marginBottom: 34,
+        marginBottom: 36,
     },
 
     // =========================================================================
-    // 5. TARJETA DE PERFIL Y MODAL DE MENÚ
+    // 5. TARJETA DE PERFIL Y MENÚ DESPLEGABLE
     // =========================================================================
     profileCard: {
         flex: 1.2,
@@ -696,7 +694,9 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         gap: 14,
-        elevation: 2,
+        position: 'relative',
+        zIndex: 100,
+        elevation: 4,
     },
     profileCardMobile: {
         flex: 0,
@@ -704,26 +704,26 @@ const styles = StyleSheet.create({
         gap: 12,
     },
     profileImage: {
-        width: 68,
-        height: 68,
-        borderRadius: 34,
+        width: 70,
+        height: 70,
+        borderRadius: 35,
         borderWidth: 2,
         borderColor: '#E2E8F0',
     },
     profileImageMobile: {
-        width: 52,
-        height: 52,
-        borderRadius: 26,
+        width: 54,
+        height: 54,
+        borderRadius: 27,
     },
     profileInfo: {
         flex: 1,
     },
     profileLabel: {
-        fontSize: 9.5,
+        fontSize: 9,
         fontWeight: '800',
         color: '#94A3B8',
         letterSpacing: 0.7,
-        marginBottom: 3,
+        marginBottom: 4,
     },
     profileName: {
         fontSize: 16,
@@ -731,9 +731,9 @@ const styles = StyleSheet.create({
         color: '#172033',
     },
     profileRole: {
-        fontSize: 12,
+        fontSize: 11.5,
         color: '#8490A3',
-        marginTop: 2,
+        marginTop: 3,
     },
     profileIndicator: {
         width: 14,
@@ -743,50 +743,45 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
     },
+    profileMenuContainer: {
+        position: 'relative',
+        zIndex: 200,
+        elevation: 20,
+    },
     menuButton: {
-        width: 36,
-        height: 36,
+        width: 34,
+        height: 38,
         justifyContent: 'center',
         alignItems: 'center',
         borderRadius: 8,
-        backgroundColor: '#F8FAFC',
     },
     menuButtonText: {
-        fontSize: 22,
+        fontSize: 24,
         fontWeight: 'bold',
         color: '#1D3557',
-        lineHeight: 24,
     },
-    modalOverlay: {
-        flex: 1,
-        backgroundColor: 'rgba(15, 23, 42, 0.25)',
-        justifyContent: 'flex-start',
-        alignItems: 'flex-end',
-        paddingTop: 140,
-        paddingRight: 24,
-    },
-    dropdownMenuModal: {
-        width: 195,
+    dropdownMenu: {
+        position: 'absolute',
+        top: 40,
+        right: 0,
+        width: 175,
         backgroundColor: '#FFFFFF',
-        borderRadius: 12,
+        borderRadius: 10,
         borderWidth: 1,
         borderColor: '#E2E8F0',
         paddingVertical: 6,
-        elevation: 10,
+        zIndex: 300,
+        elevation: 25,
         shadowColor: '#000',
-        shadowOpacity: 0.2,
-        shadowRadius: 10,
-        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.15,
+        shadowRadius: 8,
+        shadowOffset: { width: 0, height: 3 },
     },
     dropdownOption: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingVertical: 12,
-        paddingHorizontal: 14,
-    },
-    dropdownDivider: {
-        height: 1,
-        backgroundColor: '#F1F5F9',
+        paddingVertical: 11,
+        paddingHorizontal: 13,
     },
     dropdownIcon: {
         fontSize: 16,
@@ -794,9 +789,9 @@ const styles = StyleSheet.create({
         width: 26,
     },
     dropdownText: {
-        fontSize: 14,
-        color: '#1E293B',
-        fontWeight: '600',
+        fontSize: 13,
+        color: '#333333',
+        fontWeight: '500',
     },
 
     // =========================================================================
@@ -809,7 +804,8 @@ const styles = StyleSheet.create({
         borderColor: '#E5E9F0',
         borderRadius: 12,
         padding: 20,
-        elevation: 2,
+        zIndex: 1,
+        elevation: 1,
     },
     activityCardMobile: {
         flex: 0,
@@ -822,7 +818,7 @@ const styles = StyleSheet.create({
         marginBottom: 12,
     },
     activityLabel: {
-        fontSize: 10.5,
+        fontSize: 10,
         color: '#8490A3',
         fontWeight: '800',
         letterSpacing: 0.5,
@@ -867,7 +863,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 12,
     },
     activitySection: {
-        fontSize: 10.5,
+        fontSize: 10,
         fontWeight: '800',
         color: '#64748B',
         letterSpacing: 0.8,
@@ -890,12 +886,12 @@ const styles = StyleSheet.create({
         backgroundColor: '#E2E8F0',
     },
     activityNumber: {
-        fontSize: 22,
+        fontSize: 24,
         color: '#1E3A8A',
         fontWeight: '800',
     },
     activityDescription: {
-        fontSize: 11.5,
+        fontSize: 11,
         color: '#64748B',
         marginTop: 2,
         fontWeight: '500',
@@ -905,20 +901,20 @@ const styles = StyleSheet.create({
     // 7. MÓDULOS DEL SISTEMA
     // =========================================================================
     modulesSection: {
-        marginBottom: 28,
+        marginBottom: 32,
     },
     sectionHeader: {
-        marginBottom: 14,
+        marginBottom: 16,
     },
     sectionTitle: {
-        fontSize: 18,
+        fontSize: 19,
         fontWeight: '800',
         color: '#172033',
     },
     sectionSubtitle: {
         fontSize: 12.5,
         color: '#8490A3',
-        marginTop: 3,
+        marginTop: 4,
     },
     modulesGrid: {
         flexDirection: 'column',
@@ -935,17 +931,21 @@ const styles = StyleSheet.create({
         borderRadius: 12,
         overflow: 'hidden',
         elevation: 2,
+        shadowColor: '#0F172A',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.04,
+        shadowRadius: 4,
     },
     moduleCardWeb: {
         flex: 1,
     },
     modulePressed: {
-        opacity: 0.9,
+        opacity: 0.88,
         transform: [{ scale: 0.99 }],
     },
     moduleImageContainer: {
         width: '100%',
-        height: 155,
+        height: 150,
         position: 'relative',
         backgroundColor: '#E2E8F0',
     },
@@ -957,7 +957,7 @@ const styles = StyleSheet.create({
         position: 'absolute',
         top: 12,
         left: 12,
-        backgroundColor: 'rgba(15, 23, 42, 0.80)',
+        backgroundColor: 'rgba(15, 23, 42, 0.78)',
         paddingHorizontal: 9,
         paddingVertical: 4,
         borderRadius: 6,
@@ -983,7 +983,7 @@ const styles = StyleSheet.create({
         marginBottom: 4,
     },
     moduleDescription: {
-        fontSize: 13,
+        fontSize: 12.5,
         color: '#64748B',
         lineHeight: 18,
     },
@@ -996,7 +996,7 @@ const styles = StyleSheet.create({
         borderTopColor: '#F1F5F9',
     },
     moduleActionText: {
-        fontSize: 13.5,
+        fontSize: 13,
         fontWeight: '700',
         color: '#1E3A8A',
     },
@@ -1011,8 +1011,8 @@ const styles = StyleSheet.create({
     // =========================================================================
     footer: {
         alignItems: 'center',
-        paddingTop: 18,
-        paddingBottom: 12,
+        paddingTop: 20,
+        paddingBottom: 10,
         borderTopWidth: 1,
         borderTopColor: '#E2E8F0',
     },

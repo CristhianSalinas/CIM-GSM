@@ -83,13 +83,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 return;
             }
 
-            // 3. Validar token con FastAPI
-            const respuesta = await fetch(`${API_URL}/api/productos/`, {
+            const respuesta = await fetch(`${API_URL}/api/auth/me`, {
                 method: 'GET',
                 headers: {
                     Authorization: `Bearer ${token}`,
                 }
             });
+
+        console.log('VALIDACIÓN TOKEN:', respuesta.status);
 
             console.log('VALIDACIÓN TOKEN:', respuesta.status);
 

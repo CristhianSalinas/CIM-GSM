@@ -21,15 +21,18 @@ router = APIRouter(
 @router.get("", response_model=list[ProductoRespuesta])
 @router.get("/", response_model=list[ProductoRespuesta])
 def listar_productos(
-    busqueda: str = Query(..., min_length=2),
+    busqueda: str = Query(default="", min_length=0),
     usuario: Usuario = Depends(obtener_usuario_actual),
     db: Session = Depends(get_db)
 ):
-    return obtener_productos(db, busqueda)
+    if busqueda.strip():
+        return obtener_productos(db, busqueda)
+
+    return obtener_productos(db, "")
 
 
 @router.get("/estadisticas")
 def listar_estadisticas_productos(
     db: Session = Depends(get_db)
 ):
-    return obtener_estadisticas_productos(db)
+    return obtener_estadisticas_productos(db)   

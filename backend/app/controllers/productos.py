@@ -4,15 +4,21 @@ from sqlalchemy import func, or_
 from app.models.producto import Producto
 
 
-def obtener_productos(db: Session, busqueda: str):
-    termino = f"%{busqueda.strip()}%"
+def obtener_productos(db: Session, busqueda: str = ""):
 
-    return db.query(Producto).filter(
-        or_(
-            Producto.codigo_sm.ilike(termino),
-            Producto.nombre.ilike(termino)
+    consulta = db.query(Producto)
+
+    if busqueda.strip():
+        termino = f"%{busqueda.strip()}%"
+
+        consulta = consulta.filter(
+            or_(
+                Producto.codigo_sm.ilike(termino),
+                Producto.nombre.ilike(termino)
+            )
         )
-    ).limit(50).all()
+
+    return consulta.limit(50).all()
 
 
 def obtener_estadisticas_productos(db: Session):
