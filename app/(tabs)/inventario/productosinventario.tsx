@@ -96,7 +96,7 @@ export default function ProductoInventario() {
             }
 
             // 1. Consultar productos
-            const respuesta = await fetch(`${API_URL}/api/productos/`, {
+            const respuesta = await fetch(`${API_URL}/api/productos/all`, {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',

@@ -7,7 +7,8 @@ from app.config.database import get_db
 from app.controllers.productos import (
     obtener_productos,
     obtener_estadisticas_productos,
-    obtener_productos_por_categoria
+    obtener_productos_por_categoria,
+    obtener_productos_all
 )
 from app.schemas.producto import ProductoRespuesta
 from app.models.usuario import Usuario
@@ -30,6 +31,14 @@ def listar_productos(
         return obtener_productos(db, busqueda)
 
     return obtener_productos(db, "")
+
+
+
+
+# Consultar todos los clientes
+@router.get("/all", response_model=list[ProductoRespuesta])
+def listar_productos_all(db: Session = Depends(get_db)):
+    return obtener_productos_all(db)
 
 
 @router.get("/categoria", response_model=list[ProductoRespuesta])

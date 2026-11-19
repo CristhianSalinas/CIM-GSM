@@ -21,6 +21,9 @@ def obtener_productos(db: Session, busqueda: str = ""):
 
     return consulta.limit(50).all()
 
+def obtener_productos_all(db: Session):
+    return db.query(Producto).all()
+
 def obtener_productos_por_categoria(db: Session, id_categoria: int):
 
     consulta = text("""
