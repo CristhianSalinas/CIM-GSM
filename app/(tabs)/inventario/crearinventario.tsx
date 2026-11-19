@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
     View,
     Text,
@@ -40,6 +40,9 @@ export default function CrearSalida() {
     const [categoriaSeleccionada, setCategoriaSeleccionada] = useState<number | null>(null);
     const [mostrarCategorias, setMostrarCategorias] = useState(false);
 
+    const [buscando, setBuscando] = useState(false);
+     const [busquedaRealizada, setBusquedaRealizada] = useState(false);
+
     const [cargando, setCargando] = useState(false);
     const [guardando, setGuardando] = useState(false);
 
@@ -48,10 +51,10 @@ export default function CrearSalida() {
     const id_movimiento_inventario = 3;
 
     useEffect(() => {
-        cargarDatos();
+        cargarCategorias();
     }, []);
 
-    const cargarDatos = async () => {
+    const cargarCategorias = async () => {
         try {
             setCargando(true);
 
@@ -64,25 +67,15 @@ export default function CrearSalida() {
                 throw new Error('Tu sesión ha expirado.');
             }
 
-            const [respuestaCategorias, respuestaProductos] = await Promise.all([
-                fetch(`${API_URL}/api/Categorias/`, {
-                    headers: { Authorization: `Bearer ${token}` }
-                }),
-
-                fetch(`${API_URL}/api/productos/`, {
+            const [respuestaCategorias] = await Promise.all([
+                fetch(`${API_URL}/api/Categorias`, {
                     headers: { Authorization: `Bearer ${token}` }
                 })
             ]);
-
-            if (!respuestaCategorias.ok || !respuestaProductos.ok) {
-                throw new Error('Error consultando categorías o productos.');
-            }
+            
 
             const datosCategorias = await respuestaCategorias.json();
-            const datosProductos = await respuestaProductos.json();
-
             setCategorias(datosCategorias);
-            setProductos(datosProductos);
 
         } catch (error) {
             console.error('ERROR CARGANDO DATOS:', error);
@@ -96,22 +89,53 @@ export default function CrearSalida() {
         }
     };
 
-    const seleccionarCategoria = (id_categoria: number) => {
 
-            setCategoriaSeleccionada(id_categoria);
+    
+        const seleccionarCategoria = async (id_categoria: number) => {
+            try {
+                setCategoriaSeleccionada(id_categoria);
 
-            const productosEncontrados = productos.filter(
-                producto =>
-                    Number(producto.id_categoria) === Number(id_categoria)
-            );
+                const token = await obtenerToken();
 
-            setProductosCategoria(productosEncontrados);
+                if (!token) {
+                    throw new Error('No hay sesión activa.');
+                }
 
-            setMostrarCategorias(false);
+                const respuesta = await fetch(
+                    `${API_URL}/api/productos/categoria?id_Categoria=${id_categoria}`,
+                    {
+                        method: 'GET',
+                        headers: {
+                            Accept: 'application/json',
+                            Authorization: `Bearer ${token}`,
+                        },
+                    }
+                );
 
-            console.log('Categoría seleccionada:', id_categoria);
-            console.log('Productos encontrados:', productosEncontrados);
+                if (!respuesta.ok) {
+                    const error = await respuesta.text();
+                    throw new Error(`Error ${respuesta.status}: ${error}`);
+                }
+
+                const productosEncontrados = await respuesta.json();
+
+                setProductosCategoria(
+                    Array.isArray(productosEncontrados) ? productosEncontrados : []
+                );
+
+                setMostrarCategorias(false);
+
+                console.log('Categoría seleccionada:', id_categoria);
+                console.log('Productos encontrados:', productosEncontrados);
+
+            } catch (error) {
+                console.error('Error al consultar productos:', error);
+            }
         };
+
+
+
+
 
         const mostrarMensaje = (titulo: string, mensaje: string) => {
             if (Platform.OS === 'web') {
@@ -121,92 +145,94 @@ export default function CrearSalida() {
             }
         };
 
+
+
+
         const crearInventario = async () => {
 
-    if (!categoriaSeleccionada) {
-        mostrarMensaje('Atención', 'Selecciona una categoría.');
-        return;
-    }
+                if (!categoriaSeleccionada) {
+                    mostrarMensaje('Atención', 'Selecciona una categoría.');
+                    return;
+                }
 
-    if (productosCategoria.length === 0) {
-        mostrarMensaje('Atención', 'Esta categoría no tiene productos.');
-        return;
-    }
+                if (productosCategoria.length === 0) {
+                    mostrarMensaje('Atención', 'Esta categoría no tiene productos.');
+                    return;
+                }
 
-    if (!usuarioActual?.id_usuario) {
-        mostrarMensaje('Error', 'No se pudo identificar al usuario.');
-        return;
-    }
+                if (!usuarioActual?.id_usuario) {
+                    mostrarMensaje('Error', 'No se pudo identificar al usuario.');
+                    return;
+                }
 
-    try {
-        setGuardando(true);
+                try {
+                    setGuardando(true);
 
-        const token = await obtenerToken();
+                    const token = await obtenerToken();
 
-        if (!token) {
-            throw new Error('No hay token de autenticación.');
-        }
+                    if (!token) {
+                        throw new Error('No hay token de autenticación.');
+                    }
 
-        if (tokenExpirado(token)) {
-            await eliminarToken();
-            throw new Error('Tu sesión ha expirado.');
-        }
+                    if (tokenExpirado(token)) {
+                        await eliminarToken();
+                        throw new Error('Tu sesión ha expirado.');
+                    }
 
-        const datos = {
-            id_usuario: usuarioActual.id_usuario,
-            id_categoria: categoriaSeleccionada,
-            observacion: '',
-            productos: productosCategoria.map(producto => ({
-                id_producto: producto.id_producto
-            }))
-        };
+                    const datos = {
+                        id_usuario: usuarioActual.id_usuario,
+                        id_categoria: categoriaSeleccionada,
+                        observacion: '',
+                        productos: productosCategoria.map(producto => ({
+                            id_producto: producto.id_producto
+                        }))
+                    };
 
-        console.log('DATOS PARA CREAR INVENTARIO:', datos);
+                    console.log('DATOS PARA CREAR INVENTARIO:', datos);
 
-        const respuesta = await fetch(
-            `${API_URL}/api/inventarios/enviar`,
-            {
-                method: 'POST',
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(datos)
-            }
-        );
+                    const respuesta = await fetch(
+                        `${API_URL}/api/inventarios/enviar`,
+                        {
+                            method: 'POST',
+                            headers: {
+                                Authorization: `Bearer ${token}`,
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify(datos)
+                        }
+                    );
 
-        const resultado = await respuesta.json();
+                    const resultado = await respuesta.json();
 
-        if (!respuesta.ok) {
-            throw new Error(
-                resultado.detail || 'No se pudo crear el inventario.'
-            );
-        }
+                    if (!respuesta.ok) {
+                        throw new Error(
+                            resultado.detail || 'No se pudo crear el inventario.'
+                        );
+                    }
 
-        mostrarMensaje(
-            'Inventario creado correctamente',
-            `Inventario N.º ${resultado.id_inventario}`
-        );
+                    mostrarMensaje(
+                        'Inventario creado correctamente',
+                        `Inventario N.º ${resultado.id_inventario}`
+                    );
 
-        router.back();
+                    router.back();
 
-    } catch (error) {
+                } catch (error) {
 
-        console.error('ERROR CREANDO INVENTARIO:', error);
+                    console.error('ERROR CREANDO INVENTARIO:', error);
 
-        mostrarMensaje(
-            'Error',
-            error instanceof Error
-                ? error.message
-                : 'Error al crear el inventario.'
-        );
+                    mostrarMensaje(
+                        'Error',
+                        error instanceof Error
+                            ? error.message
+                            : 'Error al crear el inventario.'
+                    );
 
-    } finally {
-        setGuardando(false);
-    }
-};
+                } finally {
+                    setGuardando(false);
+                }
+            };
 
-   
 
     if (cargando) {
         return (
@@ -261,6 +287,7 @@ export default function CrearSalida() {
                                         style={styles.opcion}
                                         onPress={() =>
                                             seleccionarCategoria(categoria.id_categoria)
+                                            
                                         }
                                     >
                                         <Text style={styles.nombreOpcion}>

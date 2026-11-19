@@ -1,5 +1,6 @@
 from sqlalchemy.orm import Session
 from sqlalchemy import func, or_
+from sqlalchemy import text
 
 from app.models.producto import Producto
 
@@ -19,6 +20,32 @@ def obtener_productos(db: Session, busqueda: str = ""):
         )
 
     return consulta.limit(50).all()
+
+def obtener_productos_por_categoria(db: Session, id_categoria: int):
+
+    consulta = text("""
+        SELECT
+            p.id_producto,
+            p.codigo_sm,
+            p.nombre,
+            p.id_categoria,
+            p.id_marca,
+            p.descripcion,
+            p.referencia,
+            p.peso,
+            p.precio,
+            p.cantidad_fisica
+        FROM producto p
+        WHERE p.id_categoria = :id_categoria
+        ORDER BY p.nombre ASC
+    """)
+
+    resultado = db.execute(
+        consulta,
+        {"id_categoria": id_categoria}
+    ).mappings().all()
+
+    return [dict(fila) for fila in resultado]
 
 
 def obtener_estadisticas_productos(db: Session):
