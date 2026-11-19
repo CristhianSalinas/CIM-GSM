@@ -68,7 +68,7 @@ export default function CrearSalida() {
             }
 
             const [respuestaCategorias] = await Promise.all([
-                fetch(`${API_URL}/api/Categorias`, {
+                fetch(`${API_URL}/api/Categorias/`, {
                     headers: { Authorization: `Bearer ${token}` }
                 })
             ]);
@@ -250,8 +250,8 @@ export default function CrearSalida() {
                     
                     {/* ENCABEZADO */}
                     <View style={styles.headerContainer}>
-                        <Text style={styles.titulo}>Crear Salida</Text>
-                        <Text style={styles.subtitulo}>Registra la salida de inventario para un cliente</Text>
+                        <Text style={styles.titulo}>Crear Inventario</Text>
+                        <Text style={styles.subtitulo}>Registra inventario</Text>
                     </View>
 
                     <View style={styles.card}>
