@@ -19,3 +19,7 @@ class DetalleInventarioRespuesta(BaseModel):
     observacion: str | None = None
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class CancelarInventarioRequest(BaseModel):
+    id_inventario: int

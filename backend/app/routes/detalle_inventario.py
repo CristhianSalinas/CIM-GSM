@@ -5,14 +5,16 @@ from app.config.database import get_db
 
 from app.schemas.detalle_inventario import (
     DetalleInventarioCrear,
-    DetalleInventarioRespuesta
+    DetalleInventarioRespuesta,
+    CancelarInventarioRequest
 )
 
 from app.controllers.detalle_inventario import (
     registrar_detalle_inventario,
     obtener_detalles_inventario,
     obtener_detalles_por_inventario,
-    obtener_detalle_por_id
+    obtener_detalle_por_id,
+    cancelar_detalle_inventario
 )
 
 
@@ -100,3 +102,26 @@ def consultar_detalle(
         )
 
     return detalle
+
+
+
+
+
+# CANCELAR INVENTARIO
+@router.post("/cancelar")
+def cancelar_detalle(
+    datos: CancelarInventarioRequest,
+    db: Session = Depends(get_db)
+):
+    try:
+        return cancelar_detalle_inventario(db, datos.id_inventario)
+
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+    except Exception as e:
+        print("ERROR AL cancelar Inventario:", repr(e))
+        raise HTTPException(
+            status_code=500,
+            detail="Error al cancelar el inventario."
+        )

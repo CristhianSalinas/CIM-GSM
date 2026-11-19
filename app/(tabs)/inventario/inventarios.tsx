@@ -344,6 +344,7 @@ export default function Inventarios() {
                                 {inventarios.map((item, index) => {
                                     const estado = obtenerConfigEstado(item.id_estado);
                                     const completado = item.id_estado === 1;
+                                    const cancelado = item.id_estado === 5;
                                     const esPar = index % 2 === 0;
 
                                     return (
@@ -421,13 +422,17 @@ export default function Inventarios() {
                                                     styles.sinBordeDerecho,
                                                 ]}
                                             >
-                                                <Text
+                                               <Text
                                                     style={[
                                                         styles.textoAccion,
-                                                        completado && styles.textoAccionDeshabilitado,
+                                                        (completado || cancelado) && styles.textoAccionDeshabilitado,
                                                     ]}
                                                 >
-                                                    {completado ? 'Cerrado' : 'Gestionar ›'}
+                                                    {completado
+                                                        ? 'Cerrado'
+                                                        : cancelado
+                                                            ? 'Cancelado'
+                                                            : 'Gestionar ›'}
                                                 </Text>
                                             </View>
                                         </Pressable>

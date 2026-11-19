@@ -18,6 +18,8 @@ import {
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
 
+
+import ModalConfirmacion from '../../../componentes/botones/modal_confirmacion';
 import BotonVolver from '../../../componentes/botones/boton_volver';
 import { API_URL } from '../../../constants/api';
 import { obtenerToken } from '../../../constants/auth';
@@ -59,6 +61,7 @@ export default function ProductoInventario() {
     const [productoSeleccionado, setProductoSeleccionado] = useState<Producto | null>(null);
     const [cantidadModal, setCantidadModal] = useState('');
     const [guardandoConteo, setGuardandoConteo] = useState(false);
+    const [modalCancelarVisible, setModalCancelarVisible] = useState(false);
 
     // =========================================================================
     // MOSTRAR MENSAJES MULTIPLATAFORMA
@@ -229,6 +232,55 @@ export default function ProductoInventario() {
         setModalVisible(true);
     };
 
+    const confirmarCancelacion  = async () => {
+        try {
+            const token = await obtenerToken();
+
+            if (!token) {
+                throw new Error('No hay una sesión activa.');
+            }
+
+            const datos = {
+                id_inventario: Number(id_inventario),
+            };
+
+            const respuesta = await fetch(`${API_URL}/api/detalle-inventario/cancelar`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify(datos),
+            });
+
+            const resultado = await respuesta.json().catch(() => null);
+
+            if (!respuesta.ok) {
+                console.error('STATUS:', respuesta.status);
+                console.error('RESPUESTA BACKEND:', JSON.stringify(resultado, null, 2));
+
+                const detalle = resultado?.detail || resultado?.mensaje;
+
+                throw new Error(
+                    typeof detalle === 'string'
+                        ? detalle
+                        : JSON.stringify(detalle ?? `Error HTTP: ${respuesta.status}`)
+                );
+            }
+
+            mostrarMensaje('cancelado', '');
+            router.back();
+        } catch (err) {
+            console.error('Error cancelando:', err);
+            mostrarMensaje(
+                'Error al cancelar',
+                err instanceof Error ? err.message : 'No fue posible cancelar el inventario.'
+            );
+        } finally {
+            setGuardandoConteo(false);
+        }
+    };
+
     const guardarConteo = async () => {
         if (!productoSeleccionado || guardandoConteo) return;
 
@@ -361,10 +413,10 @@ export default function ProductoInventario() {
             const resultado = await respuesta.json().catch(() => null);
    
 
-console.log(
-    'RESPUESTA DEL BACKEND AL FINALIZAR:',
-    JSON.stringify(resultado, null, 2)
-);
+        console.log(
+            'RESPUESTA DEL BACKEND AL FINALIZAR:',
+            JSON.stringify(resultado, null, 2)
+        );
 
             if (!respuesta.ok) {
                 const detalle = resultado?.detail;
@@ -676,6 +728,12 @@ console.log(
                         >
                             <Text style={styles.botonActualizar}>Actualizar ↻</Text>
                         </Pressable>
+                        <Pressable
+                            style={styles.btnCancelar}
+                            onPress={() => setModalCancelarVisible(true)}
+                        >
+                            <Text style={styles.textoCancelar}>Cancelar</Text>
+                        </Pressable>
                     </View>
 
                     {/* ENCABEZADO DE PANTALLA */}
@@ -744,6 +802,7 @@ console.log(
                             />
                         }
                     >
+                        
                         {cargando ? (
                             <View style={styles.centro}>
                                 <ActivityIndicator size="large" color="#1D4ED8" />
@@ -805,7 +864,15 @@ console.log(
                             </View>
                         )}
                     </ScrollView>
-
+                    <ModalConfirmacion
+                        visible={modalCancelarVisible}
+                        titulo="¿Cancelar operación?"
+                        mensaje="¿Estás seguro de que quieres cancelar esta operación?"
+                        textoConfirmar="Sí, cancelar"
+                        textoCancelar="Volver"
+                        onCancelar={() => setModalCancelarVisible(false)}
+                        onConfirmar={confirmarCancelacion}
+                    />
                     {/* MODAL PARA REGISTRAR O EDITAR CONTEO FÍSICO */}
                     <Modal
                         visible={modalVisible}
@@ -927,6 +994,60 @@ const styles = StyleSheet.create({
     scrollContent: {
         flexGrow: 1,
         paddingBottom: 36,
+    },
+
+    btnCancelar: {
+        backgroundColor: '#f2563bf3',
+        padding: 12,
+        borderRadius: 8,
+        alignItems: 'center',
+    },
+    textoCancelar: {
+        color: '#FFF',
+        fontWeight: 'bold',
+    },
+    overlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.5)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 20,
+    },
+    modalContainer: {
+        backgroundColor: '#FFF',
+        width: '100%',
+        maxWidth: 400,
+        padding: 24,
+        borderRadius: 14,
+    },
+    tituloModal: {
+        fontSize: 20,
+        fontWeight: 'bold',
+        textAlign: 'center',
+        marginBottom: 12,
+    },
+    mensajeModal: {
+        textAlign: 'center',
+        color: '#555',
+        marginBottom: 24,
+    },
+    botonesModal: {
+        flexDirection: 'row',
+        gap: 10,
+    },
+    btnVolver: {
+        flex: 1,
+        padding: 12,
+        backgroundColor: '#E5E7EB',
+        borderRadius: 8,
+        alignItems: 'center',
+    },
+    btnConfirmar: {
+        flex: 1,
+        padding: 12,
+        backgroundColor: '#DC2626',
+        borderRadius: 8,
+        alignItems: 'center',
     },
 
     // =========================================================================

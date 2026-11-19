@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { View, Text, StyleSheet, ScrollView, Pressable, Alert, Platform } from 'react-native';
 import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
 import { DataTable } from 'react-native-paper';
@@ -16,6 +16,7 @@ import { obtenerToken } from '../../../constants/auth';
 import { useUsuarioActual } from '../../../hooks/useUsuarioActual';
 import { useAuth } from '../../../context/AuthContext';
 import { API_URL } from '../../../constants/api';
+import ModalConfirmacion from '../../../componentes/botones/modal_confirmacion';
 
 
 
@@ -32,6 +33,20 @@ export default function Ingreso() {
     const [productoSeleccionado, setProductoSeleccionado] = useState<Producto | null>(null);
 
     const {usuarioActual} = useUsuarioActual();
+    const router = useRouter();
+    const [modalCancelarVisible, setModalCancelarVisible] = useState(false);
+
+
+    // =========================================================================
+    // MOSTRAR MENSAJES MULTIPLATAFORMA
+    // =========================================================================
+    const mostrarMensaje = (titulo: string, mensaje: string) => {
+        if (Platform.OS === 'web') {
+            window.alert(`${titulo}\n\n${mensaje}`);
+        } else {
+            Alert.alert(titulo, mensaje);
+        }
+    };
 
 
 
@@ -62,7 +77,54 @@ export default function Ingreso() {
     };
 
 
-
+    const confirmarCancelacion  = async () => {
+            try {
+                const token = await obtenerToken();
+    
+                if (!token) {
+                    throw new Error('No hay una sesión activa.');
+                }
+    
+                const datos = {
+                    id_pedido: Number(id_pedido),
+                };
+    
+                const respuesta = await fetch(`${API_URL}/api/pedidos/cancelar`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        Authorization: `Bearer ${token}`,
+                    },
+                    body: JSON.stringify(datos),
+                });
+    
+                const resultado = await respuesta.json().catch(() => null);
+    
+                if (!respuesta.ok) {
+                    console.error('STATUS:', respuesta.status);
+                    console.error('RESPUESTA BACKEND:', JSON.stringify(resultado, null, 2));
+    
+                    const detalle = resultado?.detail || resultado?.mensaje;
+    
+                    throw new Error(
+                        typeof detalle === 'string'
+                            ? detalle
+                            : JSON.stringify(detalle ?? `Error HTTP: ${respuesta.status}`)
+                    );
+                }
+    
+                mostrarMensaje('cancelado', '');
+                router.back();
+            } catch (err) {
+                console.error('Error cancelando:', err);
+                mostrarMensaje(
+                    'Error al cancelar',
+                    err instanceof Error ? err.message : 'No fue posible cancelar el inventario.'
+                );
+            } finally {
+                
+            }
+        };
 
 const ingresarProducto = async () => {
     if (!productoSeleccionado) {
@@ -235,6 +297,16 @@ const ingresarProducto = async () => {
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.container}>
           <BotonVolver />
+              {(Number(usuarioActual?.id_rol) === 1 || Number(usuarioActual?.id_rol) === 2)  && (
+                  <>
+                      <Pressable
+                          style={styles.btnCancelar}
+                          onPress={() => setModalCancelarVisible(true)}
+                      >
+                          <Text style={styles.textoCancelar}>Cancelar</Text>
+                      </Pressable>
+                  </>
+              )}
           
           <View style={styles.headerContainer}>
             <Text style={styles.title}>Entrada de mercancía</Text>
@@ -303,7 +375,15 @@ const ingresarProducto = async () => {
                 ))}
               </DataTable>
             </View>
-
+            <ModalConfirmacion
+                visible={modalCancelarVisible}
+                titulo="¿Cancelar operación?"
+                mensaje="¿Estás seguro de que quieres cancelar esta operación?"
+                textoConfirmar="Sí, cancelar"
+                textoCancelar="Volver"
+                onCancelar={() => setModalCancelarVisible(false)}
+                onConfirmar={confirmarCancelacion}
+            />
             <CustomModal
               modalVisible={modalVisible}
               setModalVisible={setModalVisible}
@@ -392,6 +472,17 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 2,
     elevation: 2,
+  },
+
+  btnCancelar: {
+      backgroundColor: '#f2563bf3',
+      padding: 12,
+      borderRadius: 8,
+      alignItems: 'center',
+  },
+  textoCancelar: {
+      color: '#FFF',
+      fontWeight: 'bold',
   },
   number: {
     fontSize: 20,

@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.config.database import get_db
-from app.schemas.pedido import PedidoRespuesta, PedidoConProductosCrear
+from app.schemas.pedido import PedidoRespuesta, PedidoConProductosCrear, CancelarPedido
 from app.controllers.pedido import (
     obtener_pedidos, 
     obtener_pedidos_por_tipo, 
@@ -11,7 +11,8 @@ from app.controllers.pedido import (
     obtener_estado_pedido,
     crear_pedido, 
     buscar_productos,
-    obtener_pedidos_conteo)
+    obtener_pedidos_conteo,
+    cancelar_pedido)
 
 
 
@@ -22,6 +23,9 @@ router = APIRouter(
     tags=["Pedidos"]
 )
 
+
+
+
 @router.get("/buscar")
 def buscar_productos_ruta(
     busqueda: str,
@@ -30,9 +34,13 @@ def buscar_productos_ruta(
     return buscar_productos(db, busqueda)
 
 
+
+
 @router.get("/", response_model=list[PedidoRespuesta])
 def listar_pedidos(db: Session = Depends(get_db)):
     return obtener_pedidos(db)
+
+
 
 
 @router.get("/conteo")
@@ -40,6 +48,8 @@ def contar_pedidos(
     db: Session = Depends(get_db)
 ):
     return obtener_pedidos_conteo(db)
+
+
 
 
 @router.get("/{id_pedido}/productos")
@@ -52,6 +62,29 @@ def listar_pedidos_por_tipo(
 
 
 
+# CANCELAR INVENTARIO
+@router.post("/cancelar")
+def cancelar_detalle(
+    datos: CancelarPedido,
+    db: Session = Depends(get_db)
+):
+    try:
+        return cancelar_pedido(db, datos.id_pedido)
+
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+    except Exception as e:
+        print("ERROR AL cancelar Inventario:", repr(e))
+        raise HTTPException(
+            status_code=500,
+            detail="Error al cancelar el inventario."
+        )
+
+
+
+
+    
 
 @router.post("/{id_pedido}/finalizar")
 def finalizar_recepcion(

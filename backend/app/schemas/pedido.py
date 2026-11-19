@@ -10,6 +10,9 @@ class PedidoCrear(BaseModel):
     id_cliente: int
     id_estado: int
 
+class CancelarPedido(BaseModel):
+    id_pedido: int
+
 
 class ProductoPedidoCrear(BaseModel):
     id_producto: int

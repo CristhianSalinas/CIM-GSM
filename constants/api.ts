@@ -9,6 +9,7 @@ function obtenerAPI_URL() {
   if (API_PUBLICA) {
     return API_PUBLICA;
   }
+  
 
   // WEB: utiliza el mismo servidor donde se abre CIM.
   if (Platform.OS === 'web') {

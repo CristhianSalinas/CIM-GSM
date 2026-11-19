@@ -1,6 +1,6 @@
 import { View, Text, StyleSheet, ScrollView, Alert, Pressable, Platform } from 'react-native';
 import React, { useState, useEffect } from 'react';
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { DataTable } from 'react-native-paper';
 import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
 
@@ -10,20 +10,37 @@ import { API_URL } from '../../../constants/api';
 import { Producto } from '../../../types/Producto';
 import { obtenerToken } from '../../../constants/auth';
 import { useUsuarioActual } from '../../../hooks/useUsuarioActual';
+import ModalConfirmacion from '../../../componentes/botones/modal_confirmacion';
 
 
 
 export default function Salida() {
    const { id_pedido } = useLocalSearchParams<{ id_pedido: string }>();
-  
     const [datos, setDatos] = useState<Producto[]>([]);
     const [productoSeleccionado, setProductoSeleccionado] = useState<Producto | null>(null);
     const [nuevoConteo, setNuevoConteo] = useState('');
     const [modalVisible, setModalVisible] = useState(false);
     const [finalizado, setFinalizado] = useState(false);
-
-     const {usuarioActual} = useUsuarioActual();
+    const {usuarioActual} = useUsuarioActual();
+    const router = useRouter();
+    const [modalCancelarVisible, setModalCancelarVisible] = useState(false);
     
+
+
+
+    // =========================================================================
+    // MOSTRAR MENSAJES MULTIPLATAFORMA
+    // =========================================================================
+    const mostrarMensaje = (titulo: string, mensaje: string) => {
+        if (Platform.OS === 'web') {
+            window.alert(`${titulo}\n\n${mensaje}`);
+        } else {
+            Alert.alert(titulo, mensaje);
+        }
+    };
+
+
+
     
     // Cálculo dinámico de inconsistencias (ej: cuando lo despachado es diferente a lo solicitado)
     const totalInconsistencias = datos.filter(
@@ -57,8 +74,62 @@ export default function Salida() {
       }
     };
 
+
+
+
+    const confirmarCancelacion  = async () => {
+            try {
+                const token = await obtenerToken();
+    
+                if (!token) {
+                    throw new Error('No hay una sesión activa.');
+                }
+    
+                const datos = {
+                    id_pedido: Number(id_pedido),
+                };
+    
+                const respuesta = await fetch(`${API_URL}/api/pedidos/cancelar`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        Authorization: `Bearer ${token}`,
+                    },
+                    body: JSON.stringify(datos),
+                });
+    
+                const resultado = await respuesta.json().catch(() => null);
+    
+                if (!respuesta.ok) {
+                    console.error('STATUS:', respuesta.status);
+                    console.error('RESPUESTA BACKEND:', JSON.stringify(resultado, null, 2));
+    
+                    const detalle = resultado?.detail || resultado?.mensaje;
+    
+                    throw new Error(
+                        typeof detalle === 'string'
+                            ? detalle
+                            : JSON.stringify(detalle ?? `Error HTTP: ${respuesta.status}`)
+                    );
+                }
+    
+                mostrarMensaje('cancelado', '');
+                router.back();
+            } catch (err) {
+                console.error('Error cancelando:', err);
+                mostrarMensaje(
+                    'Error al cancelar',
+                    err instanceof Error ? err.message : 'No fue posible cancelar el inventario.'
+                );
+            } finally {
+                
+            }
+        };
+
+
+
+
     const SalidaProducto = async () => {
-      const token = await obtenerToken();
           if (!productoSeleccionado) {
               Alert.alert('Atención', 'Selecciona un producto.');
               return;
@@ -87,7 +158,7 @@ export default function Salida() {
 
           try {
 
-              const token = await obtenerToken();
+                      const token = await obtenerToken();
                       const cantidad = Number(nuevoConteo);
                       const idDetalle = Number(productoSeleccionado.id_detalle);
               
@@ -184,7 +255,16 @@ export default function Salida() {
       <SafeAreaView style={styles.safeArea}>
             <View style={styles.container}>
               <BotonVolver />
-
+                  {(Number(usuarioActual?.id_rol) === 1 || Number(usuarioActual?.id_rol) === 2)  && (
+                    <>
+                          <Pressable
+                              style={styles.btnCancelar}
+                              onPress={() => setModalCancelarVisible(true)}
+                          >
+                              <Text style={styles.textoCancelar}>Cancelar</Text>
+                          </Pressable>
+                      </>
+                  )}
               <Text style={styles.title}>Entrega de mercancía</Text>
               <Text style={styles.subtitle}>
                 Entrega de productos y existencias, por favor asegúrese de que la información sea correcta.
@@ -248,7 +328,15 @@ export default function Salida() {
                     </Pressable>
                   ))}
                 </DataTable>
-
+                <ModalConfirmacion
+                    visible={modalCancelarVisible}
+                    titulo="¿Cancelar operación?"
+                    mensaje="¿Estás seguro de que quieres cancelar esta operación?"
+                    textoConfirmar="Sí, cancelar"
+                    textoCancelar="Volver"
+                    onCancelar={() => setModalCancelarVisible(false)}
+                    onConfirmar={confirmarCancelacion}
+                />
                 {/* Modal fuera del .map */}
                 <CustomModal
                     modalVisible={modalVisible}
@@ -307,6 +395,16 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 11,
     color: '#6B7280',
+  },
+  btnCancelar: {
+      backgroundColor: '#f2563bf3',
+      padding: 12,
+      borderRadius: 8,
+      alignItems: 'center',
+  },
+  textoCancelar: {
+      color: '#FFF',
+      fontWeight: 'bold',
   },
   tableContainer: {
     backgroundColor: '#fff',

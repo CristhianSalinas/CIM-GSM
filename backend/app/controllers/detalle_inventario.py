@@ -6,6 +6,35 @@ from app.models.inventarios import Inventarios
 from app.schemas.detalle_inventario import DetalleInventarioCrear
 
 
+# CANCELAR INVENTARIO
+def cancelar_detalle_inventario(
+    db: Session,
+    id_inventario: int
+):
+    try:
+        inventario = db.query(Inventarios).filter(
+            Inventarios.id_inventario == id_inventario
+        ).with_for_update().first()
+
+        if not inventario:
+            raise ValueError("El inventario no existe.")
+
+        # Estado 5 = Cancelado
+        inventario.id_estado = 5
+
+        db.commit()
+        db.refresh(inventario)
+
+        return {
+            "mensaje": "Inventario cancelado correctamente.",
+            "id_inventario": inventario.id_inventario,
+            "id_estado": inventario.id_estado
+        }
+
+    except Exception:
+        db.rollback()
+        raise
+
 # REGISTRAR O ACTUALIZAR CONTEO DE INVENTARIO
 def registrar_detalle_inventario(
     db: Session,

@@ -5,7 +5,7 @@ from app.models.cliente import Cliente
 from app.models.detalle_pedido import DetallePedido
 from app.models.producto import Producto
 from sqlalchemy import func
-from app.schemas.pedido import PedidoConProductosCrear
+from app.schemas.pedido import PedidoConProductosCrear, CancelarPedido
 from fastapi import HTTPException
 
 
@@ -145,6 +145,41 @@ def crear_pedido(
     except Exception:
         db.rollback()
         raise
+
+
+
+ # CANCELAR PEDIDO
+def cancelar_pedido(
+    db: Session,
+    id_pedido: int
+):
+    try:
+        pedido = db.query(Pedido).filter(
+            Pedido.id_pedido == id_pedido
+        ).with_for_update().first()
+
+        if not pedido:
+            raise ValueError("El pedido no existe.")
+
+        # Estado 5 = Cancelado
+        pedido.id_estado = 5
+
+        db.commit()
+        db.refresh(pedido)
+
+        return {
+            "mensaje": "Pedido cancelado correctamente.",
+            "id_pedido": pedido.id_pedido,
+            "id_estado": pedido.id_estado
+        }
+
+    except Exception:
+        db.rollback()
+        raise
+
+
+
+
 
 def obtener_productos_pedidos(db: Session, id_pedido: int):
 
